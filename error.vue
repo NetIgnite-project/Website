@@ -1,8 +1,8 @@
 <template>
     <div class="app">
-        <!-- <Header /> -->
+        <Header />
         <main class="content">
-            <div class="container-xxl error-wrapper">
+            <div class="container error-wrapper">
                 <h1 class="text-center">Error {{ (error as any).statusCode }}</h1>
             </div>
         </main>
@@ -13,6 +13,7 @@
 <script setup lang="ts">
 
 import type { NuxtError } from '#app';
+import Header from './components/header/Header.vue';
 import Footer from '@/components/Footer.vue';
 
 const props = defineProps({
