@@ -8,6 +8,11 @@
     border-color: #0087ff !important;
 }
 
+.btn-outline-primary:hover {
+    background-color: #0087ff !important;
+    color: white;
+}
+
 .bg-primary {
     background-color: #0087ff !important;
 }

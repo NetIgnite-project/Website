@@ -20,7 +20,7 @@
 								<i class="bi bi-box-arrow-in-right me-2"></i>
 								Create Account
 							</button>
-							<button class="btn btn-outline-primary btn-lg px-4 py-3">
+							<button class="btn btn-outline-primary btn-lg hero-btn-outline fw-bold px-4 py-3">
 								<i class="bi bi-arrow-down-circle me-2"></i>
 								Install Self-Hosted
 							</button>
@@ -302,6 +302,10 @@
 	50% {
 		transform: translateY(-20px);
 	}
+}
+
+.hero-btn-outline:hover {
+	color: rgba(var(--bs-dark-rgb),var(--bs-text-opacity)) !important;
 }
 
 </style>
