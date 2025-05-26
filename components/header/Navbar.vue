@@ -24,16 +24,20 @@ import Logo from '@/components/img/logo-white.vue';
                         <NuxtLink class="nav-link" to="/">Home</NuxtLink>
                     </li>
                     <li class="nav-item">
+                        <NuxtLink class="nav-link" to="/features">Features</NuxtLink>
+                    </li>
+                    <li class="nav-item">
                         <NuxtLink class="nav-link" to="/about">About</NuxtLink>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link external-link" href="https://github.com/NetIgnite-project/" target="_blank">Github</a>
                     </li>
                 </ul>
-                <div class="">
+                <div class="nav-btns ms-0 ms-lg-4">
                     <a role="button" class="btn btn-primary" href="https://app.netignite.dev/" target="_blank">Login</a>
                 </div>
             </div> 
+            
         </div>
     </nav>
 </template>
@@ -68,6 +72,5 @@ a.external-link::after {
     font-size: calc(1.275rem + .1vw);
     font-weight: 500;
 }
-
 
 </style>
