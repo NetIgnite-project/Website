@@ -63,12 +63,12 @@ a.external-link::after {
 }
 
 .router-link-active {
-    color: #0d6efd !important;
+    color: #0087ff !important;
 }
 
-.btn-primary {
-    background-color: #0d6efd !important;
-    border-color: #0d6efd !important;
+.nav-btns > .btn-primary {
+    background-color: #0050ff !important;
+    border-color: #0050ff !important;
     font-size: calc(1.275rem + .1vw);
     font-weight: 500;
 }
