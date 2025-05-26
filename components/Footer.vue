@@ -1,19 +1,10 @@
-<script setup lang="ts">
-
-defineProps({
-    withMargin: {
-        type: Boolean,
-        default: true,
-    }
-});
-
-</script>
-
 <template>
-    <footer class="footer" :style="{ marginTop: withMargin ? '50px' : '0px' }">
+    <footer class="footer">
         <div class="container-fluid footer-legal">
             <p class="legal-paragraph">
-                <span class="copyright-text">&copy; 2021 - 2025 LeiCraft_MC. Alle Rechte vorbehalten</span><br>
+                <span class="copyright-text">&copy; {{ new Date().getFullYear() }} LeiCraft_MC. Alle Rechte vorbehalten</span><br>
+                <a class="legal-text" href="https://client.leicraftmc.de/impressum/">Impressum</a> |
+                <a class="legal-text" href="https://client.leicraftmc.de/datenschutz/">Datenschutz</a>
             </p>
         </div>
     </footer>
@@ -22,6 +13,7 @@ defineProps({
 <style scoped>
 
 .footer {
+    margin-top: 50px;
     margin-bottom: 0;
 }
 .footer-legal {
