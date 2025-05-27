@@ -17,6 +17,11 @@
     background-color: #0087ff !important;
 }
 
+.bg-primary-opacity-10 {
+    background-color: rgba(0, 135, 255, 0.1) !important;
+}
+
+
 .text-primary {
     color: #0087ff !important;
 }
