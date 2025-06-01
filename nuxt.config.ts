@@ -4,6 +4,8 @@ export default defineNuxtConfig({
     compatibilityDate: '2025-05-15',
     devtools: { enabled: true },
 
+    ssr: true,
+
     app: {
         head: {
             charset: "utf-8",
@@ -15,9 +17,7 @@ export default defineNuxtConfig({
 				{ rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
 				{ rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" },
 
-				{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-
-                { rel: 'stylesheet', href: '/assets/css/global.css' }
+				{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
             ],
             script: [
                 {
