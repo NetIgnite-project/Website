@@ -139,7 +139,7 @@
 							</div>
 							<h4 class="fw-bold mb-3">Mobile App</h4>
 							<p>
-								Native mobile apps for iOS and Android with full feature parity
+								PWA-Based Mobile apps for iOS and Android with full feature parity
 								and offline capabilities.
 							</p>
 						</div>
