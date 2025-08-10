@@ -99,7 +99,7 @@
 					<div class="col-md-4">
 						<div class="feature-card h-100 rounded-4 p-4 shadow-sm border-0">
 							<div class="feature-icon bg-primary bg-opacity-10 rounded-3 p-3 mb-3 d-inline-block">
-								<i class="bi bi-shield-check text-white fs-2"></i>
+								<i class="bi bi-shield-check text-primary fs-2"></i>
 							</div>
 							<h4 class="fw-bold mb-3">Secure Access</h4>
 							<p>
