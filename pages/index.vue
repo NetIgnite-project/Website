@@ -16,14 +16,14 @@
 							with enterprise-grade security and reliability.
 						</p>
 						<div class="d-flex flex-column flex-sm-row gap-3">
-							<button class="btn btn-primary btn-lg text-dark fw-bold px-4 py-3">
+							<a role="button" href="https://app.netignite.dev/auth/login" target="_blank" class="btn btn-primary btn-lg text-dark fw-bold px-4 py-3">
 								<i class="bi bi-box-arrow-in-right me-2"></i>
 								Create Account
-							</button>
-							<button class="btn btn-outline-primary btn-lg hero-btn-outline fw-bold px-4 py-3">
+							</a>
+							<a role="button" href="https://github.com/NetIgnite-project/Server" target="_blank" class="btn btn-outline-primary btn-lg hero-btn-outline fw-bold px-4 py-3">
 								<i class="bi bi-arrow-down-circle me-2"></i>
 								Install Self-Hosted
-							</button>
+							</a>
 						</div>
 						<div class="mt-4">
 							<small class="text-light opacity-75">
