@@ -3,8 +3,8 @@
         <div class="container-fluid footer-legal">
             <p class="legal-paragraph">
                 <span class="copyright-text">&copy; {{ new Date().getFullYear() }} LeiCraft_MC. Alle Rechte vorbehalten</span><br>
-                <a class="legal-text" href="https://client.leicraftmc.de/impressum/">Impressum</a> |
-                <a class="legal-text" href="https://client.leicraftmc.de/datenschutz/">Datenschutz</a>
+                <a class="legal-text" href="https://legal.leicraftmc.de/impressum/">Impressum</a> |
+                <a class="legal-text" href="https://legal.leicraftmc.de/datenschutz/">Datenschutz</a>
             </p>
         </div>
     </footer>
