@@ -63,7 +63,8 @@ so either open `http://localhost:18232` on the server itself or put the server b
 
 Go to **Agents → Add New Agent**, enter a name, choose the type **Microcontroller** and save.
 The agent page now shows the **Connection ID** and the **Connection Secret**. You need both for
-the next step. See [Managing Agents](/docs/guides/agents).
+the next step. Copy the secret right away: it's shown only once. See
+[Managing Agents](/docs/guides/agents).
 
 ### Flash the ESP32 agent
 
@@ -80,9 +81,9 @@ address, and the Connection ID and Secret:
 #define C_CONTROL_SERVER_AUTH_SECRET "your-connection-secret"
 ```
 
-Then generate the certificate bundle, build and flash the firmware. The
-[ESP32 Agent](/docs/agents/esp32) page walks through every setting and command. When the agent
-shows as **online** in the dashboard, it is connected.
+Then build and flash the firmware with PlatformIO. The [ESP32 Agent](/docs/agents/esp32) page
+walks through every setting and command. When the agent shows as **online** in the dashboard, it
+is connected.
 
 ### Add a device
 

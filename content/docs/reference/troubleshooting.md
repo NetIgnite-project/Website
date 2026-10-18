@@ -44,9 +44,9 @@ Check the server log (`docker logs netignite-server`) and, for the ESP32, the se
 | Symptom | Cause and fix |
 | --- | --- |
 | ESP32 logs `Missing credentials!` | `C_CONTROL_SERVER_AUTH_ID` or `C_CONTROL_SERVER_AUTH_SECRET` is empty. |
-| ESP32 logs `Websocket Connected` and right after `Websocket Disconnected!` | The server rejected the credentials. Check that the ID is the numeric **Connection ID**, that the secret matches the dashboard exactly and contains no `:`, and that the secret wasn't changed since you flashed the board. |
+| ESP32 logs `Websocket Connected` and right after `Websocket Disconnected!` | The server rejected the credentials. Check that the ID is the numeric **Connection ID** and that the secret is exactly the one shown when the agent was created. If you're unsure, [regenerate the secret](/docs/guides/agents#changing-the-secret) and reflash. |
 | ESP32 only logs `Websocket Disconnected! Retrying in 60 seconds...` | The connection fails before the handshake: wrong host or port, `USE_SSL` doesn't match the port (`true` for `443`, `false` for a plain `18232`), or the server certificate isn't trusted (see [Certificate bundle](/docs/agents/esp32#certificate-bundle)). |
-| ESP32 stops at `Waiting for NTP time sync` | The board has no internet access, DNS doesn't work, or NTP (UDP port 123) is blocked. Fix the network and reset the board. |
+| ESP32 logs `NTP time sync timed out` | The board has no internet access, DNS doesn't work, or NTP (UDP port 123) is blocked. TLS connections fail until the time is synced; the agent keeps retrying on its own once the network works. |
 | ESP32 logs `WiFi lost connection` repeatedly | Wrong SSID or password, or the network is 5 GHz only. |
 | The server logs `Agent '<id>' connected`, but the dashboard shows offline | The status refreshes every 20 seconds; use the **Ping** button to refresh it. |
 
@@ -57,8 +57,9 @@ seconds, as shown in [HTTPS & Reverse Proxy](/docs/server/reverse-proxy).
 
 ### The ESP32 firmware doesn't build
 
-- **`x509_crt_bundle.bin` not found:** generate the
-  [certificate bundle](/docs/agents/esp32#certificate-bundle) first. It's needed even without SSL.
+- **The certificate bundle can't be generated:** the first build installs the Python package
+  `cryptography` into PlatformIO's environment and needs internet access for that. See
+  [Certificate bundle](/docs/agents/esp32#certificate-bundle).
 - **`config/config.h` not found:** copy `src/config/config.sample.h` to `src/config/config.h`.
 - **Errors about `IPv6Address`, `enableIpV6` or `beginSslWithBundle`:** you're building with
   Arduino-ESP32 core 3.x. Use PlatformIO's official `espressif32` platform, which ships core 2.x.

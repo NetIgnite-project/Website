@@ -33,9 +33,9 @@ Changing the password does not end other active sessions.
 
 ## Sessions
 
-- Logging in sets a `session` cookie that is valid for 30 days. The cookie is `SameSite=Strict`
-  and, in production builds, `Secure`. Serve the dashboard over
-  [HTTPS](/docs/server/reverse-proxy).
+- Logging in sets a `session` cookie that is valid for 30 days. The cookie is `HttpOnly` (scripts
+  on the page can't read it), `SameSite=Strict` and, in production builds, `Secure`. Serve the
+  dashboard over [HTTPS](/docs/server/reverse-proxy).
 - Sessions are kept in server memory. Restarting or updating the server logs everyone out.
 - **Log out** in the user menu ends the session immediately.
 

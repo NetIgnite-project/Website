@@ -22,7 +22,6 @@ so it can stay on around the clock.
 - Outbound access from the ESP32 to the NetIgnite server, to DNS and to NTP (`pool.ntp.org`,
   `time.nist.gov`).
 - [PlatformIO](https://platformio.org/): the VS Code extension or PlatformIO Core (CLI).
-- Python 3 with the `cryptography` package, to generate the certificate bundle.
 - An agent created in the dashboard. You need its **Connection ID** and **Connection Secret**
   (see [Managing Agents](/docs/guides/agents)).
 
@@ -105,26 +104,14 @@ network you trust.
 ## Certificate bundle
 
 The firmware embeds a bundle of trusted root certificates (`data/cert/x509_crt_bundle.bin`) that
-it uses to verify the server's TLS certificate. The bundle isn't checked into Git, and **the build
-fails without it, even with SSL turned off**. Generate it once after cloning:
+it uses to verify the server's TLS certificate. PlatformIO generates the bundle automatically
+before each build from `data/cert/cacrt_all.pem`, Mozilla's list of public root CAs (including
+Let's Encrypt). On the first build it installs the Python package `cryptography` into
+PlatformIO's environment, which needs internet access.
 
-```bash [Terminal]
-pip install cryptography
-cd data/cert
-python gen_crt_bundle.py --input cacrt_all.pem
-mv x509_crt_bundle x509_crt_bundle.bin
-cd ../..
-```
-
-On Windows PowerShell, use `Move-Item x509_crt_bundle x509_crt_bundle.bin` for the rename.
-
-`cacrt_all.pem` contains Mozilla's list of public root CAs, including Let's Encrypt. If your
-server uses a certificate from a private CA, add that CA's certificate when you generate the
-bundle:
-
-```bash [Terminal]
-python gen_crt_bundle.py --input cacrt_all.pem /path/to/my-ca.pem
-```
+If your server uses a certificate from a private CA, put that CA's certificate (`.pem` or `.der`)
+into `data/cert/custom/` and rebuild. It's added to the bundle; remove the file to take it out
+again.
 
 ## Build and flash
 
@@ -168,7 +155,8 @@ vary):
 ```
 
 1. The agent connects to WiFi and enables IPv6.
-2. It waits until the clock is synced via NTP, which is needed to check TLS certificates.
+2. It waits up to 30 seconds for the clock to sync via NTP, which is needed to check TLS
+   certificates.
 3. It opens the WebSocket to the server and authenticates with the Connection ID and Secret.
 4. It answers commands until the connection drops.
 
@@ -176,7 +164,7 @@ vary):
 | --- | --- |
 | WiFi connection lost | Reconnects after 60 seconds. |
 | Server connection lost or refused | Retries every 60 seconds. |
-| No WiFi or NTP during boot | The agent waits at the NTP step. Reset the board once the network is available. |
+| No WiFi or NTP during boot | After 30 seconds the agent logs `NTP time sync timed out` and continues. It keeps retrying WiFi and the server every 60 seconds; TLS connections succeed once the time is synced. |
 | Empty Connection ID or Secret | Logs `Missing credentials!` and never connects. |
 
 ## Commands

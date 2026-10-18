@@ -64,7 +64,6 @@ Errors use the matching HTTP status code: `400` for invalid input, `401` without
 	"name": "Office ESP32",
 	"type": "microcontroller",
 	"description": "Under the desk",
-	"secret": "9f86d081884c7d65",
 	"ownerID": 1
 }
 ```
@@ -75,8 +74,11 @@ Errors use the matching HTTP status code: `400` for invalid input, `401` without
 | `name` | string | Display name. |
 | `type` | `"server"` \| `"microcontroller"` | Agent type. |
 | `description` | string | Free text; may be empty. |
-| `secret` | string | Connection Secret. Must not contain `:`. |
 | `ownerID` | number | ID of the owning user. |
+
+Agent objects never contain the secret. The server stores only a hash of it and returns the
+secret once, when you [create an agent](#create-an-agent) or
+[regenerate its secret](#regenerate-an-agent-secret).
 
 ```json [Device]
 {
@@ -98,8 +100,8 @@ Errors use the matching HTTP status code: `400` for invalid input, `401` without
 | `type` | `"server"` \| `"desktop"` \| `"laptop"` \| `"printer"` \| `"nas"` | Device type. |
 | `description` | string \| null | Free text. |
 | `macAddress` | string | MAC address, `AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF`. |
-| `port` | number | Wake-on-LAN UDP port, `0`–`65535` (usually `9`). |
-| `agentID` | number | ID of the agent that wakes this device. |
+| `port` | number | Wake-on-LAN UDP port, `1`–`65535` (usually `9`). |
+| `agentID` | number | ID of one of your agents; it wakes this device. |
 | `ownerID` | number | ID of the owning user. |
 
 `id` and `ownerID` are set by the server. Leave them out of request bodies.
@@ -169,8 +171,7 @@ editing someone else.
 
 ### List agents
 
-`GET /api/agents` returns all of your agents as an array of [agent objects](#objects), including
-their secrets.
+`GET /api/agents` returns all of your agents as an array of [agent objects](#objects).
 
 ### Create an agent
 
@@ -181,9 +182,17 @@ their secrets.
 | `name` | string | yes |
 | `type` | `"server"` \| `"microcontroller"` | yes |
 | `description` | string | yes (may be empty) |
-| `secret` | string | yes |
 
-Answers `201`; `data` is the new agent's ID. The agent can connect right away.
+Answers `201` with the new agent's ID and its generated secret. Store the secret now: it isn't
+returned again. The agent can connect right away.
+
+```json
+{
+	"status": "OK",
+	"message": "Agent created successfully",
+	"data": { "id": 3, "secret": "6f1c2e9a0b7d4c3e8a5f1b2c3d4e5f60" }
+}
+```
 
 ### Get agent statuses
 
@@ -203,12 +212,20 @@ or `"unknown"`. Without `ids`, all of your agents are included.
 ### Update an agent
 
 `PUT /api/agents/<id>` takes the same body as [Create an agent](#create-an-agent) and answers
-`201`. If the secret changes, the agent is disconnected and has to reconnect with the new secret.
+`201`, or `404` if the agent doesn't exist. It changes only the name, type and description.
+
+### Regenerate an agent secret
+
+`POST /api/agents/<id>/regenerate-secret` (no body)
+
+Replaces the agent's secret and answers `200` with the new one, in the same shape as
+[Create an agent](#create-an-agent). The old secret stops working immediately and a connected
+agent is disconnected. Returns `404` if the agent doesn't exist.
 
 ### Delete an agent
 
-`DELETE /api/agents/<id>` answers `200`, or `404` if the agent doesn't exist. Devices assigned to
-the agent are not deleted; reassign them first.
+`DELETE /api/agents/<id>` answers `200`, or `404` if the agent doesn't exist. A connected agent is
+disconnected. Devices assigned to the agent are not deleted; reassign them first.
 
 ## Devices
 
@@ -226,11 +243,12 @@ the agent are not deleted; reassign them first.
 | `name` | string | yes |
 | `type` | `"server"` \| `"desktop"` \| `"laptop"` \| `"printer"` \| `"nas"` | yes |
 | `description` | string | no |
-| `macAddress` | string | yes |
-| `port` | number (`0`–`65535`) | yes |
+| `macAddress` | string (`AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF`) | yes |
+| `port` | integer (`1`–`65535`) | yes |
 | `agentID` | number | yes |
 
-Answers `201`; `data` is the new device's ID. A non-existent `agentID` returns `400` with
+Answers `201`; `data` is the new device's ID. Invalid fields return `400` with `Invalid payload`.
+An `agentID` that isn't one of your agents returns `400` with
 `No matching agent found for the given AgentID`.
 
 ### Get device statuses
@@ -253,7 +271,7 @@ devices are checked one after another, and each check can take up to 5 seconds, 
 ### Update a device
 
 `PUT /api/devices/<id>` takes the same body as [Create a device](#create-a-device) and answers
-`201`.
+`201`, or `404` if the device doesn't exist.
 
 ### Delete a device
 
@@ -268,7 +286,7 @@ Sends a Wake-on-LAN command through the device's agent.
 | Status | Message | Meaning |
 | --- | --- | --- |
 | `200` | `Wakeup command sent` | The agent sent the magic packet. |
-| `404` | `Device not found or inaccessible by user` / `Agent not found` | Unknown device, or its agent no longer exists. |
+| `404` | `Device not found or inaccessible by user` / `Agent not found` | Unknown device, or its agent no longer exists or belongs to another user. |
 | `503` | `Agent is offline` | The agent isn't connected. |
 | `500` | `Failed to send wakeup command` | The agent didn't answer within 5 seconds. |
 | `500` | `Wakeup command failed: …` | The agent rejected the command, for example because of an invalid MAC address. |

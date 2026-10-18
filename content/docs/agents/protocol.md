@@ -37,7 +37,7 @@ is the agent's numeric **Connection ID** and the secret its **Connection Secret*
   `Missing or invalid credentials`.
 - Each agent can have one connection. When an agent connects again, the server closes the older
   connection.
-- If the agent's secret is changed in the dashboard, the server closes the connection.
+- If the agent's secret is regenerated or the agent is deleted, the server closes the connection.
 - Browsers can't set the `Authorization` header on WebSockets, so agents can't run in a browser.
 
 ## Message format
@@ -62,8 +62,9 @@ response object:
 ← WAKEUP:2876151413:{"status":"OK","message":"Wakeup successful"}
 ```
 
-The server waits **5 seconds** for a response; after that it treats the command as failed. It
-currently tracks one pending command per agent, so answer each command as soon as possible.
+The server waits **5 seconds** for each response; after that it treats the command as failed.
+Several commands can be pending at once, and responses may arrive in any order. They're matched by
+ID.
 
 ## Commands
 

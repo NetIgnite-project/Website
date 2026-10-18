@@ -13,8 +13,8 @@ press **Power On** in the dashboard, the server tells the agent to send a
 [Wake-on-LAN](https://en.wikipedia.org/wiki/Wake-on-LAN) magic packet to the device.
 
 ::note
-NetIgnite is under active development. These docs describe the current releases of the
-[server](https://github.com/NetIgnite-project/Server/releases) (v0.1.3) and the
+NetIgnite is under active development. These docs describe the latest versions of the
+[server](https://github.com/NetIgnite-project/Server/releases) and the
 [ESP32 agent](https://github.com/NetIgnite-project/Agent-ESP32). Where a feature isn't available
 yet, the page says so.
 ::

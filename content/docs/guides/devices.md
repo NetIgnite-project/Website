@@ -39,13 +39,10 @@ Open **Devices → Add New Device** and fill in:
 | **Description** | Optional notes. |
 | **MAC Address** | The MAC address of the device's network card, as `AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF`. |
 | **Port** | The UDP port of the magic packet. Use `9` (the default) unless your device expects `7`. |
-| **Agent** | The agent in the same network as the device. |
+| **Agent** | One of your agents, in the same network as the device. |
 
-::warning
-The server doesn't check the MAC address format. The ESP32 agent only accepts six pairs of hex
-digits separated by `:` or `-`, so `AABBCCDDEEFF` or `AABB.CCDD.EEFF` fails when you wake the
-device.
-::
+MAC addresses must be six pairs of hex digits separated by `:` or `-`. Other notations such as
+`AABBCCDDEEFF` or `AABB.CCDD.EEFF` are rejected when you save the device.
 
 ## Powering on
 
