@@ -24,42 +24,42 @@ export const homeFeatures: Feature[] = [
 		icon: "i-lucide-zap",
 		title: "Wake-on-LAN",
 		description:
-			"Power on devices remotely using Wake-on-LAN technology. Support for multiple protocols and network configurations.",
+			"Power on PCs, servers and NAS devices from anywhere. An agent in their network sends the Wake-on-LAN packet, so no port forwarding to your devices is needed.",
 		tone: "amber",
 	},
 	{
-		icon: "i-lucide-shield-check",
-		title: "Secure Access",
+		icon: "i-lucide-power",
+		title: "Shutdown & Reboot",
 		description:
-			"Enterprise-grade security with encrypted connections, multi-factor authentication, and role-based access control.",
-		tone: "primary",
-	},
-	{
-		icon: "i-lucide-chart-line",
-		title: "Real-time Monitoring",
-		description:
-			"Monitor device status, network performance, and power consumption with real-time dashboards and alerts.",
-		tone: "green",
-	},
-	{
-		icon: "i-lucide-history",
-		title: "Scheduled Actions",
-		description:
-			"Automate device power management with intelligent scheduling and energy-saving policies.",
+			"Shut down and reboot Linux machines through the NetIgnite Linux agent, or other devices over SSH with a login limited to exactly these two commands.",
 		tone: "cyan",
 	},
 	{
-		icon: "i-lucide-smartphone",
-		title: "Mobile App",
+		icon: "i-lucide-activity",
+		title: "Live Status",
 		description:
-			"PWA-Based Mobile apps for iOS and Android with full feature parity and offline capabilities.",
+			"See which devices are online, checked every 20 seconds by IP address, TCP port, MAC address, SSH port or the Linux agent on the device.",
+		tone: "green",
+	},
+	{
+		icon: "i-lucide-users",
+		title: "Sharing & Roles",
+		description:
+			"Share devices with family or colleagues as viewer, operator or manager. They never get access to your agents or logins.",
+		tone: "primary",
+	},
+	{
+		icon: "i-lucide-smartphone",
+		title: "Install as an App",
+		description:
+			"Add the dashboard to the home screen of your iPhone or Android phone as an app (PWA) and power on devices on the go.",
 		tone: "red",
 	},
 	{
 		icon: "i-lucide-puzzle",
-		title: "API Integration",
+		title: "REST API",
 		description:
-			"Comprehensive REST API for custom integrations with your existing infrastructure and automation tools.",
+			"Automate with a REST API, API keys and an OpenAPI reference for your scripts and home automation.",
 		tone: "slate",
 	},
 ];
@@ -70,59 +70,82 @@ export const platformFeatures: Feature[] = [
 		icon: "i-lucide-zap",
 		title: "Wake-on-LAN Control",
 		description:
-			"Power on offline systems remotely with structured workflows and fast response times.",
+			"Power on devices through an ESP32 or Linux agent in their network, from the dashboard, your phone or the API.",
+		tone: "amber",
+	},
+	{
+		icon: "i-lucide-power",
+		title: "Shutdown & Reboot",
+		description:
+			"Turn Linux machines off or restart them through the NetIgnite Linux agent, which can do nothing else. Other devices work over SSH with a login restricted to shutdown and reboot.",
+		tone: "cyan",
+	},
+	{
+		icon: "i-lucide-activity",
+		title: "Live Status",
+		description:
+			"Status checks every 20 seconds by IPv4 or IPv6 address, TCP port, MAC address (IPv6 link-local), SSH port or the Linux agent on the device.",
+		tone: "green",
+	},
+	{
+		icon: "i-lucide-users",
+		title: "Sharing & Roles",
+		description:
+			"Share a device as viewer (status), operator (also power actions) or manager (also settings). Agents and SSH logins stay yours.",
+		tone: "primary",
+	},
+	{
+		icon: "i-lucide-usb",
+		title: "Browser Install & Updates",
+		description:
+			"Install the ESP32 agent from Chrome, Edge or Firefox over USB. Over-the-air updates are checked before they're installed and roll back automatically if they fail.",
 		tone: "amber",
 	},
 	{
 		icon: "i-lucide-shield-check",
-		title: "Secure Access",
+		title: "Secure by Design",
 		description:
-			"Protect your environment with encrypted traffic, strict authentication, and access controls.",
-		tone: "primary",
-	},
-	{
-		icon: "i-lucide-chart-line",
-		title: "Real-time Visibility",
-		description: "Track status, uptime, and health signals in real time from a single dashboard.",
+			"Each agent has its own credential, stored on the server only as a hash, and only runs fixed commands: no remote shell, no file access.",
 		tone: "green",
 	},
 	{
-		icon: "i-lucide-history",
-		title: "Scheduled Actions",
-		description:
-			"Automate power routines for maintenance windows, daily operations, and energy savings.",
-		tone: "cyan",
-	},
-	{
 		icon: "i-lucide-smartphone",
-		title: "Mobile Ready",
+		title: "Install as an App",
 		description:
-			"Use a responsive interface and PWA support to manage critical tasks while on the move.",
+			"A responsive dashboard you can install as an app (PWA) on iOS, Android and the desktop.",
 		tone: "red",
 	},
 	{
 		icon: "i-lucide-puzzle",
-		title: "API Integration",
-		description: "Connect NetIgnite to your tools with a flexible REST API built for automation.",
+		title: "REST API",
+		description:
+			"Connect NetIgnite to your tools with a REST API, API keys and an OpenAPI reference.",
 		tone: "slate",
+	},
+	{
+		icon: "i-lucide-server",
+		title: "Hosted or Self-Hosted",
+		description:
+			"Use the hosted app or run your own server with Docker. All of NetIgnite is open source under the AGPL-3.0.",
+		tone: "primary",
 	},
 ];
 
 /** "How It Works" steps on the landing page. */
 export const setupSteps: SetupStep[] = [
 	{
-		title: "Install Agent",
+		title: "Set Up an Agent",
 		description:
-			"Deploy our lightweight agent on your network or use our cloud-based solution for instant setup.",
+			"Install the ESP32 agent from your browser, or the Linux agent with one command, in the network of your devices.",
 	},
 	{
-		title: "Discover Devices",
+		title: "Add Your Devices",
 		description:
-			"Automatically discover and catalog all network devices with their capabilities and current status.",
+			"Enter each device's MAC address and choose how NetIgnite checks whether it's online.",
 	},
 	{
 		title: "Take Control",
 		description:
-			"Start managing your devices remotely through our intuitive dashboard or mobile app.",
+			"Power devices on, shut them down and reboot them from the dashboard, the app on your phone or the API.",
 	},
 ];

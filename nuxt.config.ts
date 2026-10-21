@@ -61,7 +61,7 @@ export default defineNuxtConfig({
 		build: {
 			markdown: {
 				highlight: {
-					langs: ["bash", "json", "yaml", "ts", "cpp", "nginx", "apache", "http"],
+					langs: ["bash", "json", "yaml", "ts", "js", "ini", "nginx", "apache", "http"],
 				},
 			},
 		},

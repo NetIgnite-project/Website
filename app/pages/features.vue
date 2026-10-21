@@ -4,24 +4,24 @@ import { platformFeatures } from "~/data/features";
 usePageSeo({
 	title: "Features — NetIgnite",
 	description:
-		"Discover devices, trigger Wake-on-LAN power actions and keep your infrastructure available from anywhere with NetIgnite.",
+		"Wake-on-LAN, live status checks, shutdown and reboot, device sharing, agent updates over the network, an installable app and a REST API: what NetIgnite can do.",
 });
 
 const highlightCards = [
 	{
 		title: "Operational Highlights",
 		items: [
-			"Centralized overview of device state and reachability",
-			"Reliable Wake-on-LAN dispatch with retries and validation",
-			"Role-based controls for secure team operations",
+			"One overview of all your devices and whether they're online",
+			"Wake-on-LAN from an agent in the device's own network",
+			"Per-device roles: viewer, operator and manager",
 		],
 	},
 	{
-		title: "Built for Growth",
+		title: "Open and Extensible",
 		items: [
-			"REST API and webhooks for automation and integrations",
-			"Dashboard designed for both homelabs and enterprise fleets",
-			"Continuous improvements with focus on reliability and usability",
+			"REST API with API keys and an OpenAPI reference",
+			"Agents for the ESP32 and for Linux, in as many networks as you like",
+			"Open source under the AGPL-3.0, hosted or self-hosted",
 		],
 	},
 ];
@@ -39,8 +39,8 @@ const highlightCards = [
 							Platform <span class="text-primary">Features</span>
 						</h1>
 						<p class="text-xl/relaxed text-slate-200">
-							Everything you need to discover devices, trigger remote power actions, and keep your
-							infrastructure available from anywhere.
+							Everything you need to power devices on and off remotely, see whether they're online,
+							and share them with the people who need them.
 						</p>
 					</div>
 					<UButton

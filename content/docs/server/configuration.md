@@ -1,75 +1,172 @@
 ---
 title: "Configuration"
-description: "Configure the NetIgnite server: config.json, environment variables, data paths and log levels."
+description: "Configure the NetIgnite server with NETIGNITE_* environment variables: public URL, data paths, secrets, firmware sync, the Linux agent installer and email."
 navigation:
   title: Configuration
 ---
 
 # Configuration
 
-The NetIgnite server is configured with a JSON file and a few environment variables. Agents and
-devices are not part of the configuration. They live in the database and are managed in the
-dashboard.
+The NetIgnite server is configured with environment variables prefixed `NETIGNITE_`. They're read
+once at startup; restart the server after changing them. Agents, devices, users and the settings
+under **Server Settings** live in the database and are managed in the dashboard.
 
-## config.json
-
-The server reads `config/config.json` relative to its working directory (in Docker:
-`/opt/netignite/config/config.json`). If the file is missing, the server copies the sample config
-there on startup. The sample is an empty object, so all settings use their defaults.
-
-```json [config.json]
-{
-	"logLevel": "info"
-}
+```yaml [docker-compose.yml]
+services:
+  netignite-server:
+    image: ghcr.io/netignite-project/server:latest
+    environment:
+      NETIGNITE_APP_URL: https://netignite.example.com
+      NETIGNITE_LOG_LEVEL: info
 ```
 
-| Key | Type | Default | Description |
+Running from source, put the variables into a `.env` file in the working directory; Bun loads it on
+start. The repository's `example.env` lists all of them.
+
+::note
+Booleans must be exactly `true` or `false`. An invalid value, or a missing `NETIGNITE_APP_URL`,
+stops the server at startup with `Failed to read the environment variable <NAME>`.
+::
+
+## Variables
+
+The *Default* column is what the server uses when the variable isn't set. The Docker image sets some
+of them to paths inside the container (*Docker image* column).
+
+### General
+
+| Variable | Default | Docker image | Description |
 | --- | --- | --- | --- |
-| `logLevel` | `"debug"` \| `"info"` \| `"warn"` \| `"error"` \| `"critical"` | `"info"` | Minimum level of log messages written to the console. |
+| `NETIGNITE_APP_URL` | *required* | | The public URL of the dashboard, for example `https://netignite.example.com`, without a path. See [below](#the-public-url). |
+| `NETIGNITE_LOG_LEVEL` | `info` | | `debug`, `info`, `warn`, `error` or `critical`. |
+| `NETIGNITE_API_DISABLE_DOCS` | `false` | | `true` turns off the OpenAPI reference at `/api/docs/v1` and its spec. |
+| `NETIGNITE_SECRETS_KEY` | *generated* | | Key that encrypts stored SSH passwords and private keys. Without it, the server generates one in `<config dir>/secrets.key`. Any string; use a long random one, for example from `openssl rand -hex 32`. Changing it later makes stored SSH logins unreadable. |
 
-The file is read once at startup; restart the server after changing it. Invalid JSON or an unknown
-log level stops the server.
+### Paths and database
 
-## Environment variables
+| Variable | Default | Docker image | Description |
+| --- | --- | --- | --- |
+| `NETIGNITE_DB_PATH` | `./data/netignite.sqlite` | `/opt/netignite/data/netignite.sqlite` | The SQLite database. |
+| `NETIGNITE_DB_AUTO_MIGRATE` | `true` | `true` | Apply database migrations at startup. |
+| `NETIGNITE_DB_MIGRATION_DIR` | `./drizzle/migrations` | `/opt/netignite/app/drizzle/migrations` | Where the migrations are. |
+| `NETIGNITE_CONFIG_BASE_DIR` | `./config` | `/opt/netignite/config` | Directory for `secrets.key` and `initial_admin_password_reset_token.txt`. |
+| `NETIGNITE_LOG_DIR` | `./data/logs` | `/opt/netignite/data/logs` | Log files of background tasks. The server's own log goes to stdout. |
 
-| Variable | Default | Description |
+### ESP32 firmware
+
+| Variable | Default | Docker image | Description |
+| --- | --- | --- | --- |
+| `NETIGNITE_FIRMWARE_SYNC` | `true` | | Download new firmware releases from GitHub at startup and every 6 hours. `false` for servers without internet access; admins can still click **Sync now**. |
+| `NETIGNITE_FIRMWARE_REPO` | `NetIgnite-project/Agent-ESP32` | | The GitHub repository (`owner/name`) whose releases are synced, for example a fork. |
+| `NETIGNITE_FIRMWARE_DIR` | `./data/firmware` | `/opt/netignite/data/firmware` | Where synced releases are stored. |
+| `NETIGNITE_FIRMWARE_PUBLIC_KEY` | — | | Path to a PEM file with an ECDSA P-256 public key. When set, only releases with a valid `firmware.sig` are synced. If the file can't be read, every sync fails with the reason (shown in Server Settings) and no firmware is accepted. |
+| `NETIGNITE_GITHUB_TOKEN` | — | | A GitHub token for the release sync; raises GitHub's API rate limit. |
+
+### Linux agent installer
+
+| Variable | Default | Docker image | Description |
+| --- | --- | --- | --- |
+| `NETIGNITE_LINUX_AGENT_REPO` | `NetIgnite-project/Agent-Linux` | | GitHub repository that `/install/linux.sh` downloads the agent from. |
+| `NETIGNITE_LINUX_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the script installs the newest stable release, or the newest pre-release while there is no stable one. |
+
+### Email
+
+Email is used for password-reset links (**Forgot password** on the login page). Without
+`NETIGNITE_SMTP_HOST`, email is off; admins then reset passwords under **Admin → Users**.
+
+| Variable | Default | Docker image | Description |
+| --- | --- | --- | --- |
+| `NETIGNITE_SMTP_HOST` | — | | SMTP server. Setting it turns email on. |
+| `NETIGNITE_SMTP_PORT` | `587` | | SMTP port. |
+| `NETIGNITE_SMTP_SECURE` | `false` | | `true` for implicit TLS (usually port `465`). |
+| `NETIGNITE_SMTP_USERNAME` | — | | SMTP user; without it the server doesn't log in. |
+| `NETIGNITE_SMTP_PASSWORD` | — | | SMTP password. |
+| `NETIGNITE_SMTP_FROM` | `"NetIgnite" <noreply@netignite.dev>` | | Sender address. |
+
+### Runtime
+
+These aren't NetIgnite settings but are read by the runtime:
+
+| Variable | Default | Docker image | Description |
+| --- | --- | --- | --- |
+| `NITRO_PORT` (or `PORT`) | `3000` | `18232` | HTTP port. `bun run start` sets `PORT=18232`. |
+| `NITRO_HOST` (or `HOST`) | all interfaces | `::` | Address the server binds to. |
+| `NUXT_PUBLIC_APP_URL` | `NETIGNITE_APP_URL` | | Overrides the URL the dashboard in the browser uses. You normally don't need it. |
+
+To use another port with Docker, change the published port instead, for example `"8080:18232"`.
+
+## The public URL
+
+`NETIGNITE_APP_URL` must be the address users type into the browser, because:
+
+- the dashboard sends its API requests to `<NETIGNITE_APP_URL>/api/v1`,
+- the API only allows cross-origin requests from it, and the agent console (`/ws/console`) only
+  accepts connections from a page on it,
+- password-reset links and the first admin's link point to it,
+- the ESP32 web installer and the Linux agent's setup command use it as the server address for
+  agents (you can change the address the ESP32 uses in the installer).
+
+If users open NetIgnite under another address, the dashboard can't reach its API. Use one public
+host name, at the root of the host (no sub-path), with HTTPS.
+
+## Server settings in the dashboard
+
+Admins find these under **Admin → Server Settings**. They're stored in the database.
+
+| Setting | Default | Description |
 | --- | --- | --- |
-| `NITRO_PORT` | `3000` (`18232` in Docker) | Port of the dashboard, API and agent WebSocket. `PORT` works as well. |
-| `NITRO_HOST` | all interfaces (`0.0.0.0` in Docker) | Address the server binds to. `HOST` works as well. |
-| `CONFIG_FILE_PATH` | `./config/config.json` | Location of the config file. |
-| `NETIGNITE_SAMPLE_CONFIG_PATH` | `./config/config.sample.json` (`/etc/netignite/config.sample.json` in Docker) | File copied to `CONFIG_FILE_PATH` when no config exists. |
+| **Public sign-up** | off | Anyone who can open the server can create an account at `/auth/signup`. See [Users & Accounts](/docs/server/users#public-sign-up). |
+| **Default channel** | Stable releases | Which ESP32 firmware release is recommended in the installer and offered as an update: *Stable releases* or *Include pre-releases*. Users can still pick any synced release. |
 
-To change the port of the Docker image, change the published port instead:
-`"8080:18232"`.
+The same page shows the firmware sync state, the synced releases and the **Sync now** button.
 
-## Data paths
+## Firmware sync
 
-All paths are relative to the working directory of the server process (`/opt/netignite` in
-Docker).
+The server offers ESP32 firmware for the [web installer](/docs/agents/esp32#install-from-the-browser)
+and for [updates over the network](/docs/guides/agents#firmware-updates). Firmware only comes from
+the GitHub releases of `NETIGNITE_FIRMWARE_REPO`; there are no uploads.
 
-| Path | Content |
+A sync reads the repository's releases and keeps the 5 newest ones plus the newest stable release
+in `NETIGNITE_FIRMWARE_DIR`. A release is used if:
+
+- its tag is a version like `v2.0.0` or `v2.1.0-beta.1`,
+- it has a `release.json` for the agent protocol 2 and all files it lists,
+- every file matches the size and SHA-256 in `release.json` (files up to 4 MB),
+- with `NETIGNITE_FIRMWARE_PUBLIC_KEY` set: its `firmware.sig` is a valid signature of the app image.
+
+Skipped releases appear in the server log and in the toast after **Sync now**. Releases that drop
+out of the newest ones are deleted. See [Release signing](/docs/agents/esp32#release-signing) for
+how releases are signed.
+
+## Data paths and backup
+
+| Path (Docker) | Content |
 | --- | --- |
-| `data/db.sqlite` | SQLite database with users, agents and devices. Back this file up. |
-| `data/initial_admin_credentials` | Admin password generated on first start. Delete it after logging in. |
-| `config/config.json` | The config file above. |
+| `/opt/netignite/data/netignite.sqlite` | Database: users, sessions, API keys, agents, devices, shares, favorites, SSH logins, firmware list, settings. |
+| `/opt/netignite/data/firmware/` | Synced firmware. Can be deleted; the next sync downloads it again. |
+| `/opt/netignite/config/secrets.key` | Encrypts SSH passwords and private keys. Back it up with the database. |
+| `/opt/netignite/config/initial_admin_password_reset_token.txt` | The first admin's password link. Delete it after use. |
 
-The database schema is created automatically on startup. To back up the server, stop it and copy
-the `data/` directory.
+To back up the server, stop it and copy the `data/` and `config/` directories.
 
 ## Logging
 
-The server logs to stdout/stderr only. With Docker, read the logs with
-`docker logs netignite-server`.
+The server logs to stdout and stderr. With Docker, read the log with
+`docker logs netignite-server`. Lines look like this:
+
+```text [Server log]
+[2026-10-21T09:12:03.512Z] [INFO] Agent 3 online (esp32 2.0.0)
+```
 
 | Level | Used for |
 | --- | --- |
 | `debug` | Detailed diagnostics |
-| `info` | Startup steps, agent connects and disconnects |
-| `warn` | Recoverable problems |
-| `error` | Failed operations, WebSocket errors |
+| `info` | Startup steps, agents connecting and disconnecting, enrollments, firmware syncs and updates |
+| `warn` | Recoverable problems, skipped firmware releases, unresponsive agents |
+| `error` | Failed operations |
 | `critical` | Errors that stop the server |
 
 ::note
-The initial admin password is logged at level `info`. With `logLevel` set to `warn` or higher,
-it is only written to `data/initial_admin_credentials`.
+The first admin's password link is logged at level `info`. With `NETIGNITE_LOG_LEVEL` set to `warn`
+or higher, it's only in `initial_admin_password_reset_token.txt`.
 ::
