@@ -39,6 +39,7 @@ NetIgnite keeps its own look on top of the template:
 - Label code blocks with a file name or extension from `app/data/code-icons.ts`, or a plain label
   without a dot (`[Terminal]`); `tests/code-icons.test.ts` fails otherwise. Add new highlight
   languages to `content.build.markdown.highlight.langs` in `nuxt.config.ts`.
-- The docs describe https://github.com/NetIgnite-project/Server and
-  https://github.com/NetIgnite-project/Agent-ESP32. Verify behavior against their code, not
+- The docs describe https://github.com/NetIgnite-project/Server,
+  https://github.com/NetIgnite-project/Agent-ESP32 and
+  https://github.com/NetIgnite-project/Agent-Linux. Verify behavior against their code, not
   their READMEs.

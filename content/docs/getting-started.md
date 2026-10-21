@@ -1,6 +1,6 @@
 ---
 title: "Getting Started"
-description: "Set up a self-hosted NetIgnite server, connect an ESP32 agent and wake your first device."
+description: "Set up a self-hosted NetIgnite server, install an ESP32 agent from the browser and wake your first device."
 navigation:
   title: Getting Started
 ---
@@ -10,21 +10,23 @@ navigation:
 This guide takes you from an empty machine to your first remote wake-up. You need:
 
 - a Linux host with [Docker](https://docs.docker.com/engine/install/) and Docker Compose for the
-  server,
-- an ESP32 development board (`esp32dev`) and a USB cable,
+  server, and a host name with HTTPS for it (see [HTTPS & Reverse Proxy](/docs/server/reverse-proxy)),
+- an ESP32 development board (a classic ESP32, for example an *ESP32 DevKit*) and a USB data cable,
+- a computer with Google Chrome, Microsoft Edge or Firefox 151 or newer to install the agent,
 - a device that supports Wake-on-LAN, in the same LAN as the ESP32.
 
 ::tip
 Using the hosted app at [app.netignite.dev](https://app.netignite.dev/)? Skip steps 1 and 2, log
-in, and continue with step 3. Use `app.netignite.dev`, port `443` and SSL as the agent's server
-settings.
+in, and continue with step 3. No ESP32? A [Linux agent](/docs/agents/linux) on an always-on Linux
+machine in the same network works too.
 ::
 
 ::steps{level="3"}
 
 ### Start the server
 
-Create a `docker-compose.yml` and start it:
+Create a `docker-compose.yml`. Set `NETIGNITE_APP_URL` to the address you'll open the dashboard
+at:
 
 ```yaml [docker-compose.yml]
 services:
@@ -34,6 +36,8 @@ services:
     restart: unless-stopped
     ports:
       - "18232:18232"
+    environment:
+      NETIGNITE_APP_URL: https://netignite.example.com
     volumes:
       - /opt/netignite/data:/opt/netignite/data
       - /opt/netignite/config:/opt/netignite/config
@@ -43,59 +47,59 @@ services:
 docker compose up -d
 ```
 
-The server listens on port `18232`. See [Installation](/docs/server/installation) for details and
-other ways to run it.
+The server listens on port `18232`. Put it behind a reverse proxy with HTTPS: logging in and the
+ESP32 web installer only work over HTTPS (or on `localhost`). See
+[Installation](/docs/server/installation) and [HTTPS & Reverse Proxy](/docs/server/reverse-proxy).
 
-### Log in as admin
+### Set the admin password
 
-On first start, the server creates an `admin` account with a random password and writes it to
-`data/initial_admin_credentials`:
+On first start, the server creates the user `admin` and writes a link for setting its password to
+`config/initial_admin_password_reset_token.txt`:
 
 ```bash [Terminal]
-sudo cat /opt/netignite/data/initial_admin_credentials
+sudo cat /opt/netignite/config/initial_admin_password_reset_token.txt
 ```
 
-Open the dashboard and log in. The session cookie is only accepted over HTTPS or on `localhost`,
-so either open `http://localhost:18232` on the server itself or put the server behind
-[HTTPS](/docs/server/reverse-proxy) first. Then change the password under **Settings**.
+Open the link (it's valid for 7 days), choose a password and log in as `admin`. The welcome page
+suggests a few first steps; start with **Complete your profile** and enter your real email
+address. See [Users & Accounts](/docs/server/users).
 
 ### Create an agent
 
-Go to **Agents → Add New Agent**, enter a name, choose the type **Microcontroller** and save.
-The agent page now shows the **Connection ID** and the **Connection Secret**. You need both for
-the next step. Copy the secret right away: it's shown only once. See
+Go to **Agents → Add agent**, keep the kind **ESP32**, enter a name such as *Office ESP32* and click
+**Create agent**. The agent's page opens; its status is **Not set up**. See
 [Managing Agents](/docs/guides/agents).
 
-### Flash the ESP32 agent
+### Install the ESP32 from the browser
 
-Clone the [Agent-ESP32](https://github.com/NetIgnite-project/Agent-ESP32) repository, copy
-`src/config/config.sample.h` to `src/config/config.h` and fill in your WiFi details, the server
-address, and the Connection ID and Secret:
+On the agent's page, click **Open the web installer** (or open the **Install** tab):
 
-```cpp [config.h]
-#define C_CONTROL_SERVER_HOST "netignite.example.com"
-#define C_CONTROL_SERVER_PORT (uint16_t) 443
-#define C_CONTROL_SERVER_USE_SSL (bool) true
+1. **Choose the firmware.** The recommended release is preselected.
+2. Click **Prepare installer**. The browser downloads the firmware from your server, and the
+   server adds the agent's setup data: your server's address and a single-use token, valid for 15
+   minutes.
+3. Plug the ESP32 into your computer, click **Connect and install** and pick its serial port.
+   After flashing, enter your Wi-Fi name and password in the dialog. They go straight to the
+   ESP32, not to NetIgnite.
+4. Wait a moment: the agent joins your Wi-Fi, connects to the server, and the page shows it as
+   connected.
 
-#define C_CONTROL_SERVER_AUTH_ID "1"
-#define C_CONTROL_SERVER_AUTH_SECRET "your-connection-secret"
-```
-
-Then build and flash the firmware with PlatformIO. The [ESP32 Agent](/docs/agents/esp32) page
-walks through every setting and command. When the agent shows as **online** in the dashboard, it
-is connected.
+Details and alternatives are on the [ESP32 Agent](/docs/agents/esp32) page.
 
 ### Add a device
 
-Go to **Devices → Add New Device** and enter a name, the device type, its **MAC address** (for
-example `AA:BB:CC:DD:EE:FF`), the Wake-on-LAN **port** (`9` unless you know otherwise) and the
-agent you just created. See [Devices & Wake-on-LAN](/docs/guides/devices).
+Go to **Devices → Add device** and enter a name, the device type, its **MAC address** (for example
+`AA:BB:CC:DD:EE:FF`), the **Wake-on-LAN port** (`9` unless you know otherwise) and the agent you
+just set up. Under **Status check**, choose **IPv4 address** and enter the device's IP address to
+see whether it's online. See [Devices](/docs/guides/devices).
 
 ### Power it on
 
-Shut the device down, then press **Power On** on the dashboard. The agent sends the magic packet
-and the device starts.
+Shut the device down, then click the power button next to it on the **Overview** or **Devices**
+page. The agent sends the magic packet and the device starts; its status turns **Online** a moment
+later.
 
 ::
 
-Nothing happened? Check [Troubleshooting](/docs/reference/troubleshooting).
+Nothing happened? Check [Troubleshooting](/docs/reference/troubleshooting). Next, you could
+[share the device](/docs/guides/sharing) or set it up for [shutdown over SSH](/docs/guides/ssh).

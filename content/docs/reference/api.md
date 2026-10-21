@@ -1,6 +1,6 @@
 ---
 title: "REST API"
-description: "Reference for the NetIgnite server's HTTP API: authentication, accounts, agents, devices and Wake-on-LAN."
+description: "The NetIgnite server's HTTP API: authentication with logins and API keys, the response envelope, the OpenAPI reference and the most important endpoints."
 navigation:
   title: REST API
 ---
@@ -8,290 +8,275 @@ navigation:
 # REST API
 
 The dashboard is built on the server's JSON API, and you can call the same endpoints from scripts
-and automations. All paths are relative to your server, for example
-`https://netignite.example.com/api/devices`.
+and automations. The API lives under `/api/v1` on your server, for example
+`https://netignite.example.com/api/v1/devices`.
 
-## Basics
+::tip
+Every server includes a complete, interactive **OpenAPI reference** at `/api/docs/v1` (the
+dashboard links it as **API Reference**), with all request and response schemas. The OpenAPI
+document itself is at `/api/docs/v1/openapi`. Admins can turn both off with
+`NETIGNITE_API_DISABLE_DOCS=true`. This page covers the basics and the most important endpoints.
+::
 
-### Authentication
+## Authentication
 
-The API uses the same session cookie as the dashboard. Log in with
-[`POST /api/auth/login`](#log-in) and send the returned `session` cookie with every request.
-API keys aren't available yet.
+Requests authenticate with a bearer token:
 
-```bash [Terminal]
-# Log in and store the session cookie
-curl -c cookies.txt -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"<password>"}' \
-  https://netignite.example.com/api/auth/login
-
-# Use the cookie
-curl -b cookies.txt https://netignite.example.com/api/devices
-curl -b cookies.txt -X POST https://netignite.example.com/api/devices/1/wakeup
+```http
+Authorization: Bearer <token>
 ```
 
-Every endpoint except those under `/api/auth/` requires a session. Without one, the server answers
-`401` with `No session found` or `Invalid session`. Sessions last 30 days and end when the server
-restarts.
+| Token | Looks like | Get it | Valid |
+| --- | --- | --- | --- |
+| **API key** | `netignite_apikey_…` | **Settings → API Keys** in the dashboard | Until it expires or is deleted |
+| **Login (session)** | `netignite_sess_…` | `POST /api/v1/auth/login` | 7 days, or until logout |
 
-### Responses
+Use an API key for scripts. It works for agents, devices, firmware and (for admins) the admin
+endpoints. The endpoints under `/account` (your profile, password and API keys) and
+`/auth/session` and `/auth/logout` need a login token.
 
-Responses share one envelope:
+```bash [Terminal]
+curl -H "Authorization: Bearer netignite_apikey_…" \
+  https://netignite.example.com/api/v1/devices
+
+curl -X POST -H "Authorization: Bearer netignite_apikey_…" \
+  https://netignite.example.com/api/v1/devices/4/power-on
+```
+
+To get a login token instead:
+
+```bash [Terminal]
+curl -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<password>"}' \
+  https://netignite.example.com/api/v1/auth/login
+```
+
+The answer's `data.token` is the login token. After 5 failed logins for a username from one address
+(15 from all addresses), the server answers `429` for 5 minutes.
+
+## Responses
+
+Every response uses the same envelope:
 
 ```json
 {
-	"status": "OK",
-	"message": "Devices retrieved successfully.",
+	"success": true,
+	"code": 200,
+	"message": "Devices retrieved",
 	"data": []
 }
 ```
 
 | Field | Description |
 | --- | --- |
-| `status` | `"OK"` on success, `"ERROR"` on failure. |
-| `message` | Human-readable result. Missing on the status endpoints. |
-| `data` | The result, if any. |
+| `success` | `true` or `false`. |
+| `code` | The HTTP status code. |
+| `message` | Human-readable result. The dashboard shows error messages as they are. |
+| `data` | The result; `null` if there is none. Missing on errors. |
 
-Errors use the matching HTTP status code: `400` for invalid input, `401` without a valid session,
-`404` for agents or devices that don't exist or belong to another user, `409` for conflicts,
-`503` when an agent is offline, and `500` for server errors. Updates answer `201`.
+| Status | Meaning |
+| --- | --- |
+| `200`, `201`, `202` | Success. `202`: a firmware update was started or queued. |
+| `400` | Invalid input. |
+| `401` | No or an invalid token, or the endpoint needs a login token. |
+| `403` | Not allowed, for example your role on a shared device or a non-admin calling an admin endpoint. |
+| `404` | Not found, or not yours. |
+| `409` | Conflict, for example a duplicate username, or a device without an agent or method for the action. |
+| `429` | Rate limit. |
+| `502` | The agent reported an error. |
+| `503` | The agent is offline. |
+| `504` | The agent didn't answer in time. |
 
-### Objects
+Timestamps are Unix times in milliseconds.
+
+## Devices
+
+All endpoints return the devices you own and the devices shared with you; your role on each is in
+`access_role`.
+
+| Method and path | Description |
+| --- | --- |
+| `GET /devices` | List devices. |
+| `POST /devices` | Create a device. |
+| `GET /devices/<id>` | Get a device. |
+| `PUT /devices/<id>` | Change a device (owner, manager; agents: owner only). All fields optional. |
+| `DELETE /devices/<id>` | Delete a device (owner). |
+| `POST /devices/<id>/power-on` | Send Wake-on-LAN (owner, manager, operator). |
+| `POST /devices/<id>/shutdown` | Shut down through the Linux agent on the device or SSH (owner, manager, operator). |
+| `POST /devices/<id>/reboot` | Reboot, like shutdown. |
+| `POST /devices/<id>/status` | Check the status now and return it (at most every 5 seconds per device). |
+| `PUT /devices/<id>/favorite` | Add to your favorites. `DELETE` removes it. |
+
+```json [Device]
+{
+	"id": 4,
+	"name": "Gaming PC",
+	"type": "desktop",
+	"description": "",
+	"mac_address": "AA:BB:CC:DD:EE:FF",
+	"wol_port": 9,
+	"agent_id": 3,
+	"status_method": "ipv4",
+	"status_address": "192.168.1.20",
+	"status_tcp_port": 3389,
+	"host_agent_id": null,
+	"created_at": 1792351800000,
+	"access_role": "owner",
+	"owner": { "id": 1, "username": "admin", "display_name": "Admin" },
+	"agent": { "id": 3, "name": "Office ESP32", "kind": "esp32", "state": "online" },
+	"host_agent": null,
+	"favorite": true,
+	"status": { "state": "online", "checked_at": 1792351812000 },
+	"actions": { "power_on": true, "shutdown": false, "reboot": false }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `type` | `server`, `desktop`, `laptop`, `printer`, `nas` or `other`. |
+| `mac_address` | `AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF` in requests; stored with colons in uppercase. |
+| `wol_port` | `1`–`65535`, default `9`. |
+| `agent_id` | The agent that wakes and checks the device, or `null`. |
+| `status_method` | `none` (default), `link_local`, `ipv4`, `ipv6`, `ssh` or `host_agent`. See [Status checks](/docs/guides/devices#status-checks). |
+| `status_address` | Required for `ipv4` (IPv4 address), `ipv6` (IPv6 address) and `ssh` (IP address or host name). |
+| `status_tcp_port` | Optional extra TCP probe; the port for `ssh` (default `22`). |
+| `host_agent_id` | The Linux agent running on the device, or `null`. |
+| `access_role` | `owner`, `manager`, `operator` or `viewer`. |
+| `status` | `state` (`online`, `offline`, `unknown`), `checked_at` and, for `unknown`, a `reason`. |
+| `actions` | Which power actions are possible right now for you. |
+
+Required when creating: `name`, `type` and `mac_address`. Agents must be your own;
+`host_agent_id` must be a Linux agent.
+
+### Sharing
+
+Owner only, except leaving a device.
+
+| Method and path | Description |
+| --- | --- |
+| `GET /devices/<id>/shares` | List the shares: `user`, `role`, `created_at`. |
+| `POST /devices/<id>/shares` | Share: `{ "user": "<username or email>", "role": "viewer" \| "operator" \| "manager" }`. |
+| `PUT /devices/<id>/shares/<user-id>` | Change the role: `{ "role": "manager" }`. |
+| `DELETE /devices/<id>/shares/<user-id>` | Remove a share. With your own user ID, you leave a shared device. |
+
+### SSH login
+
+Owner only. The password or private key is never returned. See [SSH](/docs/guides/ssh).
+
+| Method and path | Description |
+| --- | --- |
+| `GET /devices/<id>/ssh` | The login without its secret, with `authorized_keys` and `sudoers` lines. |
+| `PUT /devices/<id>/ssh` | Set the login: `host` (or `null` for the status address), `port`, `username`, `os` (`posix`, `windows`), `sudo`, and `auth`: `{ "type": "generate_key" }`, `{ "type": "password", "password": "…" }` or `{ "type": "keep" }`. |
+| `DELETE /devices/<id>/ssh` | Remove the login. |
+| `POST /devices/<id>/ssh/test` | Let the device's agent log in and report the host key: `online`, `authenticated`, `host_key`, `trusted`, `error`. |
+| `POST /devices/<id>/ssh/trust` | Trust a host key: `{ "host_key": "SHA256:…" }`. |
+
+## Agents
+
+Agents are never shared: these endpoints only see your own.
+
+| Method and path | Description |
+| --- | --- |
+| `GET /agents` | List agents. |
+| `POST /agents` | Create an agent: `{ "name": "…", "description": "…", "kind": "esp32" \| "linux" }`. |
+| `GET /agents/<id>` | Get an agent. |
+| `PUT /agents/<id>` | Change `name` and `description`. |
+| `DELETE /agents/<id>` | Delete and disconnect. Its devices keep their settings without an agent. |
+| `POST /agents/<id>/enrollments` | Create a single-use enrollment token (15 minutes): `{ "token", "expires_at" }`. |
+| `POST /agents/<id>/revoke` | Revoke the credential and disconnect. |
+| `POST /agents/<id>/flash-image` | ESP32: the NVS image for the web installer: `{ "version": "…", "server_url"?: "…" }` → `{ "image" (base64), "offset", "server_url", "expires_at" }`. Contains a new enrollment token. |
+| `POST /agents/<id>/update` | ESP32: start a firmware update: `{ "version"?: "…" }` (default: the recommended release). |
+| `POST /agents/bulk-update` | ESP32: update several agents one after another: `{ "agent_ids": [3, 5], "version"?: "…" }` → `{ "version", "queued", "skipped" }`. |
+| `GET /agents/<id>/logs` | The agent's stored log lines and log level. |
+| `GET /agents/<id>/info` | Ask the agent for current diagnostics. |
+| `PUT /agents/<id>/device-config` | Change settings on the agent: `server_url`, `name`, `log_level`, `ip`. |
+| `POST /agents/<id>/reboot` | Restart the agent. |
+| `POST /agents/<id>/factory-reset` | Erase the agent's settings and revoke its credential. |
+| `POST /agents/enroll` | Used by agents, without user authentication. See [Agent Protocol](/docs/agents/protocol#enrollment). |
 
 ```json [Agent]
 {
 	"id": 3,
 	"name": "Office ESP32",
-	"type": "microcontroller",
-	"description": "Under the desk",
-	"ownerID": 1
+	"description": "",
+	"kind": "esp32",
+	"state": "online",
+	"version": "2.0.0",
+	"capabilities": ["wake", "status.link_local", "status.ip", "status.host", "status.tcp", "ota", "logs", "config", "device.reboot", "device.reset", "ssh"],
+	"info": { "name": "Office-ESP32", "ipv4": "192.168.1.50", "rssi_dbm": -58 },
+	"last_seen_at": 1792351812000,
+	"enrolled_at": 1792350000000,
+	"created_at": 1792349000000,
+	"update": null,
+	"update_available": null
 }
 ```
 
-| Agent field | Type | Description |
-| --- | --- | --- |
-| `id` | number | Agent ID, also the Connection ID. |
-| `name` | string | Display name. |
-| `type` | `"server"` \| `"microcontroller"` | Agent type. |
-| `description` | string | Free text; may be empty. |
-| `ownerID` | number | ID of the owning user. |
+`state` is `online`, `offline` or `unenrolled` (*Not set up*). `update` is the current or last
+firmware update (`version`, `from_version`, `state`: `queued`, `starting`, `downloading`,
+`restarting`, `done` or `failed`, `percent`, `error`), kept in memory for 24 hours.
+`update_available` is a newer release of the admin's channel, if the agent can be updated.
 
-Agent objects never contain the secret. The server stores only a hash of it and returns the
-secret once, when you [create an agent](#create-an-agent) or
-[regenerate its secret](#regenerate-an-agent-secret).
+## Firmware
 
-```json [Device]
-{
-	"id": 1,
-	"name": "Gaming PC",
-	"type": "desktop",
-	"description": null,
-	"macAddress": "AA:BB:CC:DD:EE:FF",
-	"port": 9,
-	"agentID": 3,
-	"ownerID": 1
-}
-```
+| Method and path | Description |
+| --- | --- |
+| `GET /firmware` | The synced ESP32 releases: `{ "channel", "recommended", "releases": [...] }`, each with its flash parts, offsets and SHA-256s. |
+| `GET /firmware/<version>/files/<file>` | Download a firmware file. ESP32 agents also use it with their agent credential for updates. |
 
-| Device field | Type | Description |
-| --- | --- | --- |
-| `id` | number | Device ID. |
-| `name` | string | Display name. |
-| `type` | `"server"` \| `"desktop"` \| `"laptop"` \| `"printer"` \| `"nas"` | Device type. |
-| `description` | string \| null | Free text. |
-| `macAddress` | string | MAC address, `AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF`. |
-| `port` | number | Wake-on-LAN UDP port, `1`–`65535` (usually `9`). |
-| `agentID` | number | ID of one of your agents; it wakes this device. |
-| `ownerID` | number | ID of the owning user. |
+## Account and authentication
 
-`id` and `ownerID` are set by the server. Leave them out of request bodies.
+| Method and path | Description |
+| --- | --- |
+| `POST /auth/login` | `{ "username", "password" }` → a login token in `data.token`. |
+| `GET /auth/session` | The current login (login token only). |
+| `POST /auth/logout` | End the current login. |
+| `GET /auth/registration` | `{ "enabled": true \| false }`: whether public sign-up is on. |
+| `POST /auth/signup` | Create an account while public sign-up is on: `{ "username", "email", "password", "display_name"? }`. |
+| `POST /auth/reset-password/request` | Send a reset link to `{ "email" }` (needs email to be configured). |
+| `POST /auth/reset-password` | `{ "reset_token", "new_password" }`. |
+| `GET /account`, `PUT /account` | Your profile; changes need `current_password`. |
+| `PUT /account/password` | `{ "current_password", "new_password" }`. Ends all your logins. |
+| `DELETE /account` | Delete your account with its agents and devices. |
+| `GET /account/apikeys`, `POST /account/apikeys` | List or create API keys: `{ "description", "expires_at": "7d" \| "30d" \| "90d" \| "180d" \| "365d" \| null }` → `{ "id", "token" }`. |
+| `DELETE /account/apikeys/<id>` | Delete an API key. |
 
-## Authentication
+## Admin
 
-### Log in
+Admins only, with a login token or an admin's API key.
 
-`POST /api/auth/login`
+| Method and path | Description |
+| --- | --- |
+| `GET /admin/users`, `POST /admin/users` | List users (`?role=`, `?search=`) or create one: `{ "username", "display_name", "email", "password", "role" }`. |
+| `GET`, `PUT`, `DELETE /admin/users/<id>` | Get, change (`display_name`, `email`, `role`, …) or delete a user. |
+| `PUT /admin/users/<id>/password` | Set a user's password and end their logins. |
+| `GET /admin/settings`, `PUT /admin/settings` | `{ "registration_enabled": false, "firmware_channel": "stable" \| "prerelease" }`. |
+| `GET /admin/firmware` | The firmware sync state. |
+| `POST /admin/firmware/sync` | Sync firmware releases from GitHub now. |
 
-| Body field | Type | Required |
-| --- | --- | --- |
-| `username` | string | yes |
-| `password` | string | yes |
+## Other endpoints
 
-Sets the `session` cookie and answers `200` with `Login successful`. Wrong credentials return
-`401` with `No matching credentials found`.
+| Path | Description |
+| --- | --- |
+| `GET /api/health` | `200` while the server runs. Used by Docker's health check. |
+| `GET /api/docs/v1` | The OpenAPI reference. `/api` redirects there. |
+| `/ws/agent` | The agent WebSocket. See [Agent Protocol](/docs/agents/protocol). |
+| `/ws/console` | The live log of an agent, for the dashboard. See [below](#the-console-websocket). |
+| `GET /install/linux.sh` | The Linux agent's install script. See [Linux Agent](/docs/agents/linux#install). |
 
-### Log out
+### The console WebSocket
 
-`POST /api/auth/logout`
-
-Ends the session and clears the cookie. Always answers `200`.
-
-### Get the session
-
-`GET /api/auth/session`
-
-Returns the logged-in user, or `401` if there is no valid session.
+`/ws/console` streams an agent's log to a browser. The connection must come from a page on
+`NETIGNITE_APP_URL` (other `Origin` headers get `403`). The first message authenticates within 10
+seconds; only the agent's owner may watch it:
 
 ```json
-{
-	"status": "OK",
-	"message": "Session valid",
-	"data": {
-		"userID": 1,
-		"username": "admin",
-		"role": "admin",
-		"favorites": [],
-		"expirationTimestamp": 1792351800000
-	}
-}
+{ "type": "auth", "token": "<login token or API key>", "agent_id": 3 }
 ```
 
-## Account
-
-### Update an account
-
-`PUT /api/account/<userID>`
-
-Updates the username and password of the logged-in user.
-
-| Body field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `username` | string | yes | New or current username. Must be unique (`409` otherwise). |
-| `favorites` | number[] | yes | IDs of favorite devices. Send the current list (`[]` if none). |
-| `password` | string | no | New password. Omit it or send an empty string to keep the current one. |
-| `role` | `"user"` \| `"admin"` | no | See below. |
-
-Answers `201` with `User Account updated successfully`.
-
-**Admin mode.** Admins can add `?adminMode=true` to update the user given in the path instead of
-themselves. The first user (ID `1`) can also change other users' `role`, and must send `role` when
-editing someone else.
-
-## Agents
-
-### List agents
-
-`GET /api/agents` returns all of your agents as an array of [agent objects](#objects).
-
-### Create an agent
-
-`POST /api/agents`
-
-| Body field | Type | Required |
-| --- | --- | --- |
-| `name` | string | yes |
-| `type` | `"server"` \| `"microcontroller"` | yes |
-| `description` | string | yes (may be empty) |
-
-Answers `201` with the new agent's ID and its generated secret. Store the secret now: it isn't
-returned again. The agent can connect right away.
-
-```json
-{
-	"status": "OK",
-	"message": "Agent created successfully",
-	"data": { "id": 3, "secret": "6f1c2e9a0b7d4c3e8a5f1b2c3d4e5f60" }
-}
-```
-
-### Get agent statuses
-
-`GET /api/agents/status?ids=1,2`
-
-Returns the connection status of your agents as a map from agent ID to `"online"`, `"offline"`
-or `"unknown"`. Without `ids`, all of your agents are included.
-
-```json
-{ "status": "OK", "data": { "1": "online", "2": "offline" } }
-```
-
-### Get an agent
-
-`GET /api/agents/<id>` returns one [agent object](#objects), or `404`.
-
-### Update an agent
-
-`PUT /api/agents/<id>` takes the same body as [Create an agent](#create-an-agent) and answers
-`201`, or `404` if the agent doesn't exist. It changes only the name, type and description.
-
-### Regenerate an agent secret
-
-`POST /api/agents/<id>/regenerate-secret` (no body)
-
-Replaces the agent's secret and answers `200` with the new one, in the same shape as
-[Create an agent](#create-an-agent). The old secret stops working immediately and a connected
-agent is disconnected. Returns `404` if the agent doesn't exist.
-
-### Delete an agent
-
-`DELETE /api/agents/<id>` answers `200`, or `404` if the agent doesn't exist. A connected agent is
-disconnected. Devices assigned to the agent are not deleted; reassign them first.
-
-## Devices
-
-### List devices
-
-`GET /api/devices` returns all of your devices as an array of [device objects](#objects). Add
-`?onlyFavorites=true` to return only the devices in your favorites list.
-
-### Create a device
-
-`POST /api/devices`
-
-| Body field | Type | Required |
-| --- | --- | --- |
-| `name` | string | yes |
-| `type` | `"server"` \| `"desktop"` \| `"laptop"` \| `"printer"` \| `"nas"` | yes |
-| `description` | string | no |
-| `macAddress` | string (`AA:BB:CC:DD:EE:FF` or `AA-BB-CC-DD-EE-FF`) | yes |
-| `port` | integer (`1`–`65535`) | yes |
-| `agentID` | number | yes |
-
-Answers `201`; `data` is the new device's ID. Invalid fields return `400` with `Invalid payload`.
-An `agentID` that isn't one of your agents returns `400` with
-`No matching agent found for the given AgentID`.
-
-### Get device statuses
-
-`GET /api/devices/status?ids=1,2`
-
-Asks each device's agent whether the device is online and returns a map from device ID to
-`"online"`, `"offline"` or `"unknown"`. Without `ids`, all of your devices are checked. The
-devices are checked one after another, and each check can take up to 5 seconds, so filter with
-`ids` when you only need a few.
-
-```json
-{ "status": "OK", "data": { "1": "online", "4": "unknown" } }
-```
-
-### Get a device
-
-`GET /api/devices/<id>` returns one [device object](#objects), or `404`.
-
-### Update a device
-
-`PUT /api/devices/<id>` takes the same body as [Create a device](#create-a-device) and answers
-`201`, or `404` if the device doesn't exist.
-
-### Delete a device
-
-`DELETE /api/devices/<id>` answers `200`, or `404` if the device doesn't exist.
-
-### Wake a device
-
-`POST /api/devices/<id>/wakeup` (no body)
-
-Sends a Wake-on-LAN command through the device's agent.
-
-| Status | Message | Meaning |
-| --- | --- | --- |
-| `200` | `Wakeup command sent` | The agent sent the magic packet. |
-| `404` | `Device not found or inaccessible by user` / `Agent not found` | Unknown device, or its agent no longer exists or belongs to another user. |
-| `503` | `Agent is offline` | The agent isn't connected. |
-| `500` | `Failed to send wakeup command` | The agent didn't answer within 5 seconds. |
-| `500` | `Wakeup command failed: …` | The agent rejected the command, for example because of an invalid MAC address. |
-
-## Agent WebSocket
-
-`/api/agent-control-service` is the WebSocket endpoint for agents, not a REST endpoint. See
-[Agent Protocol](/docs/agents/protocol).
+The server then sends `{ "type": "ready", "online": true }`, the stored lines as
+`{ "type": "lines", "lines": [...], "reset": true, "level": "info" }`, new lines as
+`{ "type": "lines", "lines": [...], "reset": false }`, `{ "type": "state", "online": false }` when the
+agent disconnects, and `{ "type": "error", "message": "…" }` before closing (close codes `4401`
+not authenticated, `4404` agent not found, `1008` invalid message). The token is checked again
+every minute.

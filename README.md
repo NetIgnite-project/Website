@@ -48,8 +48,9 @@ Docs live in `content/docs/` as markdown files. Navigation is declared in `app/d
 new page by creating a `.md` file, adding it to the sidebar data and to
 `public/static/utils/sitemap.xml`.
 
-The docs describe the [Server](https://github.com/NetIgnite-project/Server) and the
-[ESP32 agent](https://github.com/NetIgnite-project/Agent-ESP32). Keep them in sync with those
+The docs describe the [Server](https://github.com/NetIgnite-project/Server), the
+[ESP32 agent](https://github.com/NetIgnite-project/Agent-ESP32) and the
+[Linux agent](https://github.com/NetIgnite-project/Agent-Linux). Keep them in sync with those
 repositories when behavior changes.
 
 ## Structure
