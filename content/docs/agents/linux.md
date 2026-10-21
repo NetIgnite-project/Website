@@ -62,9 +62,10 @@ The agent shows up as online on its page. Then:
 - To **wake other devices**, turn on [Wake-on-LAN mode](#wake-on-lan-mode) and choose the agent as
   the **Agent** of those devices.
 
-By default, the script installs the newest release, pre-releases included. The server's admin can
-pin a release with `NETIGNITE_LINUX_AGENT_VERSION` or use another repository with
-`NETIGNITE_LINUX_AGENT_REPO` (see [Configuration](/docs/server/configuration#linux-agent-installer)).
+By default, the script installs the newest stable release (a pre-release only while there is no
+stable one). The server's admin can pin a release with `NETIGNITE_LINUX_AGENT_VERSION` or use
+another repository with `NETIGNITE_LINUX_AGENT_REPO` (see
+[Configuration](/docs/server/configuration#linux-agent-installer)).
 On the machine, the variables `NETIGNITE_AGENT_VERSION` (a release tag) and
 `NETIGNITE_AGENT_BASE_URL` (a mirror with the release files) override that; pass them through
 `sudo env`:

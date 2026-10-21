@@ -67,7 +67,7 @@ of them to paths inside the container (*Docker image* column).
 | Variable | Default | Docker image | Description |
 | --- | --- | --- | --- |
 | `NETIGNITE_LINUX_AGENT_REPO` | `NetIgnite-project/Agent-Linux` | | GitHub repository that `/install/linux.sh` downloads the agent from. |
-| `NETIGNITE_LINUX_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the script installs the newest release, pre-releases included. |
+| `NETIGNITE_LINUX_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the script installs the newest stable release, or the newest pre-release while there is no stable one. |
 
 ### Email
 

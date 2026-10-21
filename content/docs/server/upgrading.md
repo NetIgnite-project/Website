@@ -11,6 +11,15 @@ NetIgnite v2 is a rewrite of the server and the agents. Your v1 data is imported
 database; the v1 database stays untouched. Agents have to be set up again: v1 agents can't connect
 to a v2 server, and ESP32 boards need the v2 firmware.
 
+::warning
+**Using the `latest` image?** Since 2.0.0, `ghcr.io/netignite-project/server:latest` is v2. A v1
+server that pulls it, by hand or with an auto-updater such as Watchtower, starts v2 with an empty
+database next to the v1 one: users, agents and devices seem to be gone, but they're still in
+`data/db.sqlite`, and the server log says *Found a NetIgnite v1 database … that hasn't been
+imported*. Continue at [Try the import](#try-the-import). To stay on v1 for now, use the image
+`ghcr.io/netignite-project/server:0.1.3`.
+::
+
 | | v1 (`0.1.x`) | v2 |
 | --- | --- | --- |
 | Database | `data/db.sqlite` | `data/netignite.sqlite` (the import reads `db.sqlite`) |
