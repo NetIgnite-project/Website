@@ -39,9 +39,8 @@ const heroDevices = [
 							From Anywhere
 						</h1>
 						<p class="mb-6 text-xl/relaxed text-slate-200 md:text-2xl/relaxed">
-							Take control of your network infrastructure with NetIgnite. Remotely manage, monitor,
-							and power on devices across your entire network with enterprise-grade security and
-							reliability.
+							Power on, monitor and shut down the computers in your network from anywhere. A small
+							agent in your LAN does the work; you use the dashboard, your phone or the API.
 						</p>
 						<div class="flex flex-col gap-4 sm:flex-row">
 							<UButton
@@ -65,7 +64,7 @@ const heroDevices = [
 						</div>
 						<p class="mt-6 flex items-center gap-2 text-sm text-slate-300">
 							<UIcon name="i-lucide-circle-check" class="size-4 text-primary" />
-							Free for personal use with up to 5 devices.
+							Open source under the AGPL-3.0. Use the hosted app or run your own server.
 						</p>
 					</div>
 
@@ -97,7 +96,8 @@ const heroDevices = [
 				<div class="mx-auto mb-12 max-w-3xl text-center">
 					<h2 class="mb-4 text-4xl font-bold text-white md:text-5xl">Powerful Remote Management</h2>
 					<p class="text-xl text-slate-200">
-						Everything you need to manage your network devices remotely with confidence and security.
+						Everything you need to power your devices on and off remotely and see whether they're
+							online.
 					</p>
 				</div>
 				<div class="grid gap-6 md:grid-cols-3">
@@ -142,7 +142,7 @@ const heroDevices = [
 					<div class="lg:max-w-3xl">
 						<h2 class="mb-4 text-3xl font-bold text-white md:text-4xl">Ready to Power Up Your Network?</h2>
 						<p class="text-xl text-slate-200">
-							Join thousands of IT professionals who trust NetIgnite for remote device management.
+							Set up your first agent in minutes, on the hosted app or your own server.
 						</p>
 					</div>
 					<UButton

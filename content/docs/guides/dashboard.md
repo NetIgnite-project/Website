@@ -1,6 +1,6 @@
 ---
 title: "Dashboard"
-description: "A tour of the NetIgnite web app: overview, devices, agents, settings, API keys and the admin area."
+description: "A tour of the NetIgnite web app: overview, devices, agents, settings, API keys, the admin area and installing it as an app."
 navigation:
   title: Dashboard
 ---
@@ -78,3 +78,17 @@ Admins see two more pages:
 
 See [Users & Accounts](/docs/server/users#managing-users) and
 [Configuration](/docs/server/configuration#server-settings-in-the-dashboard).
+
+## Installing as an app
+
+The dashboard can be installed as an app (PWA) on phones, tablets and computers. It then opens in
+its own window without the browser's address bar and gets an icon on the home screen or in the app
+list:
+
+- **Android (Chrome):** menu **⋮** → **Add to home screen**, then **Install**.
+- **iPhone and iPad (Safari):** **Share** → **Add to Home Screen**.
+- **Chrome or Edge on a computer:** the install icon at the right of the address bar.
+
+The app is the same dashboard and needs its server: without a connection it shows *You're offline*
+and a **Try again** button. Browsers only offer to install it over HTTPS (or on `localhost`), so a
+self-hosted server needs a [reverse proxy](/docs/server/reverse-proxy) with a certificate.

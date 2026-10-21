@@ -1,16 +1,27 @@
 ---
 title: "SSH"
-description: "Shut down and reboot devices over SSH: set up a login with a generated Ed25519 key or a password, restrict it to shutdown and reboot, and trust the host key."
+description: "Shut down and reboot devices over SSH: why the Linux agent is the safer choice, a dedicated user with a generated Ed25519 key that may only shut down and reboot, and trusting the host key."
 navigation:
   title: SSH
 ---
 
 # SSH
 
-For devices that don't run the [Linux agent](/docs/agents/linux) (another Linux box, a NAS, a Mac,
-a Windows PC with OpenSSH Server), NetIgnite can shut them down and reboot them over SSH. The
+For devices that can't run the [Linux agent](/docs/agents/linux) (many NAS systems, a Mac, a BSD
+box, a Windows PC with OpenSSH Server), NetIgnite can shut them down and reboot them over SSH. The
 **device's agent** logs in, because it's the one inside the LAN; the server stores the login and
 sends it to that agent for each command.
+
+::warning
+**Prefer the Linux agent wherever it runs.** For a Linux machine with systemd, install the
+[Linux agent](/docs/agents/linux) on it and choose it as the device's **Linux agent** instead of
+setting up SSH. It can only shut down and reboot that machine (through polkit), and no login to the
+machine is stored anywhere. With SSH, the server stores a login to the device: whoever gets the
+server's database **and** its secrets key can log in to the device with it. If you use SSH, log in
+as a [dedicated user](#a-dedicated-user) that may only shut down and reboot, with a generated key.
+Never use `root`, an administrator or your own account (Windows is the exception that needs an
+administrator, see [Windows](#windows)).
+::
 
 What NetIgnite does over SSH is fixed:
 
@@ -30,6 +41,32 @@ There's no way to run anything else: no shell, no file access, no other commands
 - You must be the device's owner. The **SSH** tab isn't available to users the device is shared
   with.
 
+## A dedicated user
+
+The stored login should be able to do as little as possible on the device, so that a leaked login
+allows nothing but a shutdown:
+
+- **A user only for NetIgnite**, for example `netignite`. Not `root`, not your own account.
+- **No other rights.** Don't add it to `sudo`, `wheel`, `admin` or any other group with extra
+  rights. The sudoers line from **Prepare the device** allows it exactly the two `shutdown`
+  commands.
+- **A generated key, not a password.** The `authorized_keys` line of a generated key lets only the
+  two commands through. A password works for everything the account can do, including a shell.
+
+On Linux, create the user with:
+
+```sh
+sudo useradd --create-home --shell /bin/sh netignite
+sudo -u netignite mkdir -m 700 /home/netignite/.ssh
+```
+
+Keep a real shell such as `/bin/sh` (not `nologin`): SSH runs the forced command through the user's
+shell. Then add the `authorized_keys` and sudoers lines as described
+[below](#linux-macos-bsd). On macOS, create a **Standard** user (not an administrator) in
+**System Settings → Users & Groups** and allow it under **Remote Login**; on BSD, use `adduser`.
+
+For Linux, macOS and BSD, the dashboard warns when the username is `root`, `admin` or `Administrator`.
+
 ## Setting up the login
 
 Open the device and its **SSH** tab:
@@ -38,7 +75,7 @@ Open the device and its **SSH** tab:
 | --- | --- |
 | **Host** | Host name or IP address. Empty: the device's status check address. |
 | **Port** | Usually `22`. |
-| **Username** | The account the agent logs in with. Use a dedicated user, for example `netignite`. |
+| **Username** | The account the agent logs in with: a [dedicated user](#a-dedicated-user), for example `netignite`. |
 | **Operating system** | *Linux, macOS, BSD* or *Windows (OpenSSH)*. Decides the command (table above). |
 | **Use sudo** | Linux, macOS, BSD: run `shutdown` with `sudo -n`. Not needed for `root`. |
 | **Authentication** | **New key pair** (recommended): the server generates an Ed25519 key pair. **Password**: the account's password. **Keep the current**: change the other fields only. |
@@ -77,7 +114,16 @@ password allows. Prefer a key.
 ### Windows
 
 Install **OpenSSH Server** (Settings → System → Optional features), start the `sshd` service and
-choose *Windows (OpenSSH)* as the operating system. Shutting down needs an administrator account:
+choose *Windows (OpenSSH)* as the operating system. Shutting down needs an administrator account,
+so on Windows the login can't be limited to shutdown and reboot: whoever gets it controls the PC.
+Keep the risk small:
+
+- Create a **separate administrator account only for NetIgnite** instead of using your own or the
+  built-in `Administrator`.
+- Use a **generated key** rather than a password, and accept it only from the agent: put
+  `restrict,from="<agent's IP address>"` at the start of its line.
+
+Where the login goes:
 
 - **Key:** put the line from **Prepare the device** (`restrict ssh-ed25519 AAAA…`) into
   `C:\ProgramData\ssh\administrators_authorized_keys`. Only Administrators and SYSTEM may have
@@ -108,6 +154,9 @@ key if it differs. Changing the login's host or port removes the trusted key; te
 
 ## Security
 
+- **A stored login is a key to the device.** That's why the [Linux agent](/docs/agents/linux) is the
+  better choice for Linux machines, and why the login should belong to a
+  [dedicated user](#a-dedicated-user) that may only shut down and reboot.
 - **Write-only.** The API never returns a stored password or private key. The dashboard only shows
   the public key.
 - **Encrypted at rest.** Passwords and private keys are encrypted with the server's secrets key

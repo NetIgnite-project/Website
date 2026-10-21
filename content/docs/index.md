@@ -41,6 +41,7 @@ server. All components are open source under the
 - **Share** devices with other users as viewer, operator or manager.
 - **Install the ESP32 agent from the browser** and keep it up to date with over-the-air updates.
 - **Automate** with the REST API and API keys.
+- **Use it on your phone**: install the dashboard as an app (PWA).
 
 ## Where to start
 

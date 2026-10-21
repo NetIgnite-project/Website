@@ -103,10 +103,12 @@ when to use which.
 
 Shutdown and reboot need one of two things:
 
-- **The Linux agent on the device.** The server sends it `HOST_CONTROL`, and the agent runs
-  `systemctl poweroff` or `systemctl reboot`.
+- **The Linux agent on the device** (preferred). The server sends it `HOST_CONTROL`, and the agent
+  runs `systemctl poweroff` or `systemctl reboot`. It can't do anything else, and the server holds
+  no login to the device.
 - **An SSH login.** The device's agent logs in to the device over SSH and runs a fixed `shutdown`
-  command. The device's host key must have been trusted first. See [SSH](/docs/guides/ssh).
+  command. The device's host key must have been trusted first. The server stores the login, so it
+  should belong to a user that may only shut down and reboot. See [SSH](/docs/guides/ssh).
 
 If a device has both, the server uses the Linux agent while it's online.
 

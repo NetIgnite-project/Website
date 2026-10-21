@@ -92,9 +92,10 @@ turned on; watch its status turn **Online**, or see
 When a device can be shut down, the power button gets a menu with **Shut down** and **Reboot**.
 NetIgnite asks for confirmation, then shows *Shutdown requested* or *Reboot requested*. This needs:
 
-- the **Linux agent on the device**, online, or
+- the **Linux agent on the device**, online (the preferred way for Linux machines: no login to the
+  device is stored anywhere), or
 - an **SSH login** with a trusted host key, and the device's agent online and able to log in over
-  SSH. See [SSH](/docs/guides/ssh).
+  SSH. Use a dedicated user that may only shut down and reboot. See [SSH](/docs/guides/ssh).
 
 If both are set up, NetIgnite uses the Linux agent while it's online, and SSH otherwise.
 
