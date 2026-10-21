@@ -25,7 +25,7 @@ to a v2 server, and ESP32 boards need the v2 firmware.
 | v1 | In v2 |
 | --- | --- |
 | Users | Imported with their username, password and role. They get a placeholder email address `<username>@imported.netignite.invalid`. Passwords are converted to the new hash format at the first login. |
-| The v1 `admin` | Merged into the v2 `admin`. If nobody has logged in as `admin` in v2 yet, it takes over the v1 password and the v2 password link stops working. |
+| The v1 `admin` | Merged into the v2 `admin`. If nobody has set the v2 `admin` password yet (the password link is unused), it takes over the v1 password and the link stops working. |
 | Agents | Imported with name and description, but **not set up** (status *Not set up*): v1 secrets can't be used in v2. *Microcontroller* agents become ESP32 agents, *Server* agents become Linux agents. |
 | Devices | Imported with name, type, description, MAC address, Wake-on-LAN port and agent. Their status check is **MAC (IPv6 link-local)**, the check v1 used. Devices without an agent get no status check. |
 | Favorites | Imported. |
@@ -71,7 +71,7 @@ docker compose up -d
 ```
 
 v2 creates its own database `data/netignite.sqlite` next to the v1 `data/db.sqlite`, and a new
-`admin` with a password link. Don't log in yet if you want the v1 admin password to carry over.
+`admin` with a password link. Don't use the link yet if you want the v1 admin password to carry over.
 
 If you use a reverse proxy, check that it forwards WebSockets on `/ws/agent` and `/ws/console`
 (v1 only needed `/api/agent-control-service`). See [HTTPS & Reverse Proxy](/docs/server/reverse-proxy).
@@ -109,16 +109,16 @@ docker exec netignite-server bun /opt/netignite/app/.output/import-v1.mjs \
 ```
 
 The import uses the container's `NETIGNITE_*` settings and writes to the running server's
-database. Running it again is safe: records that were already imported are skipped. When users
-were merged (normally the `admin`), the import deletes `config/initial_admin_password_reset_token.txt`.
+database. Running it again is safe: records that were already imported are skipped. When the
+`admin` takes over the v1 password, the import deletes `config/initial_admin_password_reset_token.txt`.
 
 Running the server from source? Run the import from the repository root:
 `bun scripts/import-v1.ts --from <path to db.sqlite> [--dry-run] [--merge-users]`.
 
 ## Log in
 
-Log in as `admin` with the v1 password (or, if you logged in to v2 before the import, with the v2
-password). Every user gets the welcome page at the first login; ask your users to enter their real
+Log in as `admin` with the v1 password (or, if you set a v2 password with the link before the
+import, with that one). Every user gets the welcome page at the first login; ask your users to enter their real
 email address under **Settings → General**.
 
 ## Set up the agents again

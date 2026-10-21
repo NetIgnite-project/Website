@@ -90,9 +90,9 @@ Under **Settings** in the sidebar:
   your account deletes your agents and devices too.
 - **API Keys**: see [below](#api-keys).
 
-Passwords need at least 8 characters. A password set with **Change Password**, an admin's
-**Reset Password** or a reset link must also have at most 50 characters and contain an uppercase
-letter, a lowercase letter, a digit and a special character.
+Passwords need 8 to 50 characters with an uppercase letter, a lowercase letter, a digit and a
+special character, everywhere: sign-up, **Create User**, **Change Password**, an admin's **Reset
+Password** and reset links.
 
 ## Forgotten passwords
 

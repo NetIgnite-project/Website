@@ -59,7 +59,7 @@ of them to paths inside the container (*Docker image* column).
 | `NETIGNITE_FIRMWARE_SYNC` | `true` | | Download new firmware releases from GitHub at startup and every 6 hours. `false` for servers without internet access; admins can still click **Sync now**. |
 | `NETIGNITE_FIRMWARE_REPO` | `NetIgnite-project/Agent-ESP32` | | The GitHub repository (`owner/name`) whose releases are synced, for example a fork. |
 | `NETIGNITE_FIRMWARE_DIR` | `./data/firmware` | `/opt/netignite/data/firmware` | Where synced releases are stored. |
-| `NETIGNITE_FIRMWARE_PUBLIC_KEY` | — | | Path to a PEM file with an ECDSA P-256 public key. When set, only releases with a valid `firmware.sig` are synced. The file must exist at startup. |
+| `NETIGNITE_FIRMWARE_PUBLIC_KEY` | — | | Path to a PEM file with an ECDSA P-256 public key. When set, only releases with a valid `firmware.sig` are synced. If the file can't be read, every sync fails with the reason (shown in Server Settings) and no firmware is accepted. |
 | `NETIGNITE_GITHUB_TOKEN` | — | | A GitHub token for the release sync; raises GitHub's API rate limit. |
 
 ### Linux agent installer

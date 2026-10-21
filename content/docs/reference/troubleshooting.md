@@ -19,7 +19,7 @@ journal (`journalctl -u netignite-agent`).
 | --- | --- |
 | `Failed to read the environment variable APP_URL: …` | Set `NETIGNITE_APP_URL`; it's required. |
 | `Failed to read the environment variable <NAME>: Expected a boolean value ('true' or 'false')` | Booleans must be exactly `true` or `false`, not empty, `1` or `yes`. |
-| `Unhandled Rejection` about a file that doesn't exist, right after `Starting NetIgnite...` | `NETIGNITE_FIRMWARE_PUBLIC_KEY` is a *path*; the file must exist inside the container, for example in the config volume. |
+| `NETIGNITE_FIRMWARE_PUBLIC_KEY: can't use …` | `NETIGNITE_FIRMWARE_PUBLIC_KEY` is a *path* to a PEM public key; the file must exist inside the container, for example in the config volume. Until it can be read, every firmware sync fails with this message (also under **Admin → Server Settings**). |
 
 ### The firmware list stays empty
 
@@ -206,9 +206,10 @@ Viewers don't get power actions.
 
 ### Shutdown requested, but nothing happens
 
-- **Linux agent on the device:** check its journal for `Host control (shutdown) failed`. Usually
-  polkit is missing (`apt install polkitd`, then `sudo netignite-agent install` again) or a
-  block inhibitor, such as a running package upgrade, holds the shutdown.
+- **Linux agent on the device:** the dashboard shows why the agent refused (from systemd-logind).
+  Usually polkit is missing (`apt install polkitd`, then `sudo netignite-agent install` again) or a
+  block inhibitor, such as a running package upgrade, holds the shutdown (`systemd-inhibit --list`).
+  If the request succeeded but nothing happened, check the journal for `Host control (shutdown) failed`.
 - **SSH:** errors come back in the toast:
 
 | Message | Fix |

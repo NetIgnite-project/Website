@@ -138,12 +138,14 @@ then:
 
 - show the machine as online while the agent is connected (status check
   *Linux agent on the device*),
-- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent answers, waits about a second and runs
-  `systemctl --no-ask-password poweroff` or `systemctl --no-ask-password reboot`.
+- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent first asks systemd-logind whether it
+  may (`CanPowerOff`/`CanReboot`); if not (polkit rule missing, or a block inhibitor such as a
+  running package upgrade), it answers with the reason, which the dashboard shows. Otherwise it
+  answers, waits about a second and runs `systemctl --no-ask-password poweroff` or
+  `systemctl --no-ask-password reboot`.
 
-Nothing else: the server can't run commands, read files or change the configuration. A failed
-`systemctl` call (polkit missing, or a block inhibitor such as a running package upgrade) is logged
-in the agent's journal.
+Nothing else: the server can't run commands, read files or change the configuration. If
+`systemctl` still fails after the answer, the error is in the agent's journal.
 
 ## Wake-on-LAN mode
 
