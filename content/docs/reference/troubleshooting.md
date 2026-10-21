@@ -206,10 +206,12 @@ Viewers don't get power actions.
 
 ### Shutdown requested, but nothing happens
 
-- **Linux agent on the device:** the dashboard shows why the agent refused (from systemd-logind).
-  Usually polkit is missing (`apt install polkitd`, then `sudo netignite-agent install` again) or a
-  block inhibitor, such as a running package upgrade, holds the shutdown (`systemd-inhibit --list`).
-  If the request succeeded but nothing happened, check the journal for `Host control (shutdown) failed`.
+- **Linux agent on the device:** the dashboard shows why the agent refused. *… can't shut down
+  through the agent (netignite-agent-shutdown.path is inactive)*: run `sudo netignite-agent install`
+  again, for example after updating from a version before 1.0.0. *… blocks shutdown and reboot right
+  now*: a block inhibitor, such as a running package upgrade, holds the shutdown
+  (`systemd-inhibit --list`). If the request succeeded but nothing happened, check
+  `journalctl -u netignite-agent -u netignite-agent-shutdown`.
 - **SSH:** errors come back in the toast:
 
 | Message | Fix |

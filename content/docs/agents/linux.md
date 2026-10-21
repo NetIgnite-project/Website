@@ -1,6 +1,6 @@
 ---
 title: "Linux Agent"
-description: "The NetIgnite agent for Linux: install it with one command, pair it, host mode and Wake-on-LAN mode, the systemd service, polkit, uninstalling and security."
+description: "The NetIgnite agent for Linux: install it with one command, pair it, host mode and Wake-on-LAN mode, the systemd service, shutdown and reboot, uninstalling and security."
 navigation:
   title: Linux Agent
 ---
@@ -23,8 +23,6 @@ releases: [NetIgnite-project/Agent-Linux](https://github.com/NetIgnite-project/A
 ## Requirements
 
 - Linux with systemd, on a 64-bit x86 or ARM CPU.
-- polkit, for shutdown and reboot (`apt install polkitd` on Debian and Ubuntu, `dnf install polkit`
-  on Fedora). Without it, the agent runs, but shutdown and reboot fail.
 - Wake-on-LAN mode: `ping` (iputils or BusyBox) and `ip` (iproute2).
 - `curl` and `sha256sum` for the install script.
 
@@ -139,14 +137,13 @@ then:
 
 - show the machine as online while the agent is connected (status check
   *Linux agent on the device*),
-- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent first asks systemd-logind whether it
-  may (`CanPowerOff`/`CanReboot`); if not (polkit rule missing, or a block inhibitor such as a
-  running package upgrade), it answers with the reason, which the dashboard shows. Otherwise it
-  answers, waits about a second and runs `systemctl --no-ask-password poweroff` or
-  `systemctl --no-ask-password reboot`.
+- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent first checks that it can (see
+  [Shutdown and reboot](#shutdown-and-reboot)); if not, for example while a running package
+  upgrade blocks shutdowns, it answers with the reason, which the dashboard shows. Otherwise it
+  answers, waits about a second and asks systemd to power off or reboot.
 
-Nothing else: the server can't run commands, read files or change the configuration. If
-`systemctl` still fails after the answer, the error is in the agent's journal.
+Nothing else: the server can't run commands, read files or change the configuration. If the
+shutdown still fails after the answer, the error is in the agent's journal.
 
 ## Wake-on-LAN mode
 
@@ -182,9 +179,12 @@ netignite-agent wol AA:BB:CC:DD:EE:FF --port 9
 - makes the config readable for the service: `/etc/netignite` owned by `root:netignite` with mode
   `0750`, `agent.json` owned by `netignite` with mode `0600`,
 - writes `/etc/systemd/system/netignite-agent.service`,
-- writes the polkit rule `/etc/polkit-1/rules.d/50-netignite-agent.rules` (plus a `.pkla` file in
-  `/etc/polkit-1/localauthority/50-local.d/` on polkit older than 0.106, for example Debian 11),
-- runs `systemctl daemon-reload`, `enable` and `restart`.
+- writes the [shutdown and reboot units](#shutdown-and-reboot) `netignite-agent-shutdown.path`,
+  `netignite-agent-shutdown.service`, `netignite-agent-reboot.path` and
+  `netignite-agent-reboot.service`,
+- removes the polkit rule that versions before 1.0.0 wrote, if there is one,
+- runs `systemctl daemon-reload`, enables and starts the two `.path` units, and enables and
+  (re)starts the service.
 
 `sudo netignite-agent install --dry-run` prints every step and the files' contents without changing
 anything. The unit for host mode (comments left out):
@@ -205,6 +205,9 @@ Restart=always
 RestartSec=5
 RestartPreventExitStatus=78
 TimeoutStopSec=10
+
+RuntimeDirectory=netignite-agent
+RuntimeDirectoryMode=0700
 
 NoNewPrivileges=yes
 ProtectSystem=strict
@@ -235,29 +238,49 @@ In Wake-on-LAN mode, the last line is replaced by `CapabilityBoundingSet=CAP_NET
 `AmbientCapabilities=CAP_NET_RAW`, which `ping` needs. Use `systemctl edit netignite-agent` for local
 changes; `install` and `wol-mode` overwrite the unit file.
 
-### polkit
+### Shutdown and reboot
 
-The rule lets the user `netignite`, and nobody else, use exactly the logind actions behind
-`systemctl poweroff` and `systemctl reboot`:
+The service user `netignite` has no right to shut the machine down, and needs none: no polkit, no
+sudo. It can only ask.
 
-```js [polkit rule]
-polkit.addRule(function (action, subject) {
-	var allowed = [
-		"org.freedesktop.login1.power-off",
-		"org.freedesktop.login1.power-off-multiple-sessions",
-		"org.freedesktop.login1.reboot",
-		"org.freedesktop.login1.reboot-multiple-sessions"
-	];
-	if (subject.user == "netignite" && allowed.indexOf(action.id) >= 0) {
-		return polkit.Result.YES;
-	}
-});
+1. The service has its own runtime directory `/run/netignite-agent` (`RuntimeDirectory=`), owned by
+   `netignite` with mode `0700`, so only the agent and root can write to it.
+2. For a shutdown, the agent creates the file `/run/netignite-agent/shutdown` (`reboot` for a
+   reboot).
+3. `netignite-agent-shutdown.path` sees the file and starts `netignite-agent-shutdown.service`, a
+   root unit that removes the file and powers the machine off. That's all it can do.
+4. The agent waits up to 5 seconds for the file to disappear. If nothing picks it up, it deletes the
+   file again, so it can't fire later, and the dashboard shows the error.
+
+```ini [netignite-agent-shutdown.path]
+[Unit]
+Description=NetIgnite Agent: shutdown requests
+
+[Path]
+PathExists=/run/netignite-agent/shutdown
+Unit=netignite-agent-shutdown.service
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-The `*-multiple-sessions` actions apply when other users are logged in, for example over SSH. The
-`*-ignore-inhibit` actions aren't granted, so a block inhibitor (a running package upgrade, for
-example) still stops a remote shutdown. `systemctl` asks logind over D-Bus, and logind asks polkit;
-no setuid helper is involved, so `NoNewPrivileges` doesn't get in the way.
+```ini [netignite-agent-shutdown.service]
+[Unit]
+Description=NetIgnite Agent: shut down this machine
+
+[Service]
+Type=oneshot
+ExecStart=rm -f /run/netignite-agent/shutdown
+ExecStart=systemctl --no-block poweroff
+```
+
+The reboot units are the same with `reboot`. Before it answers the server, the agent checks that
+the `.path` unit is active and asks systemd-logind for block inhibitors: while something such as a
+package upgrade blocks shutdowns, the dashboard says so and nothing happens. When the agent stops,
+systemd deletes its runtime directory, and a pending request with it.
+
+Versions before 1.0.0 used a polkit rule instead, which failed with *Access denied* on machines
+without polkit. Run `sudo netignite-agent install` again after updating; it removes the rule.
 
 ## Commands
 
@@ -305,8 +328,8 @@ sudo netignite-agent uninstall           # keeps /etc/netignite/agent.json (root
 sudo netignite-agent uninstall --purge   # also deletes the config with the credential
 ```
 
-This stops and disables the service and removes the unit, the polkit rule, the user `netignite`
-and `/usr/local/bin/netignite-agent`. `--dry-run` shows the steps. Delete the agent in the dashboard
+This stops and disables the service and the shutdown and reboot units, removes their unit files,
+the user `netignite` and `/usr/local/bin/netignite-agent`. `--dry-run` shows the steps. Delete the agent in the dashboard
 too.
 
 ## Security

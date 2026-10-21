@@ -15,7 +15,7 @@ sends it to that agent for each command.
 ::warning
 **Prefer the Linux agent wherever it runs.** For a Linux machine with systemd, install the
 [Linux agent](/docs/agents/linux) on it and choose it as the device's **Linux agent** instead of
-setting up SSH. It can only shut down and reboot that machine (through polkit), and no login to the
+setting up SSH. It can only shut down and reboot that machine, and no login to the
 machine is stored anywhere. With SSH, the server stores a login to the device: whoever gets the
 server's database **and** its secrets key can log in to the device with it. If you use SSH, log in
 as a [dedicated user](#a-dedicated-user) that may only shut down and reboot, with a generated key.
