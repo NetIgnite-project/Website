@@ -49,7 +49,7 @@ which it could do with the agent on the device too.
 
 - An admin turned SSH on under **Server Settings**.
 - The device's **Agent** (on its **General** tab) is online, in the device's network, and can log
-  in over SSH: an ESP32 with firmware 2.0.0 or newer, or a Linux agent 1.0.0 or newer in
+  in over SSH: an ESP32 with firmware newer than 2.0.0, or a Linux agent newer than 1.0.0 in
   [Wake-on-LAN mode](/docs/agents/linux#wake-on-lan-mode), connected to the server over HTTPS. Its
   capabilities on its page include `ssh.power` then.
 - An SSH server on the device, reachable from the agent.
@@ -180,9 +180,10 @@ differs. Changing the login's host or port removes the trusted key; test and tru
 **Remove SSH login** deletes the login from the server. Remove the two `authorized_keys` lines and
 the sudoers file from the device too.
 
-## Upgrading from 2.0.0-beta.2
+## Upgrading from 2.0.0
 
-The betas stored passwords or server-generated keys. They're gone with 2.0.0: remove the old
-`authorized_keys` lines (or the password login) from your devices, delete `config/secrets.key` on
-the server, turn SSH on under **Server Settings**, and add the two new lines from each device's
-**SSH** tab.
+Server 2.0.0 (and its betas) stored passwords or server-generated keys. Newer servers store no SSH
+secrets: remove the old `authorized_keys` lines (or the password login) from your devices, delete
+`config/secrets.key` on the server, update the device's agent (ESP32 firmware newer than 2.0.0,
+Linux agent newer than 1.0.0), turn SSH on under **Server Settings**, and add the two new lines
+from each device's **SSH** tab.

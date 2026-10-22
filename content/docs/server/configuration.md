@@ -68,7 +68,7 @@ of them to paths inside the container (*Docker image* column).
 | `NETIGNITE_AGENT_REPO` | `NetIgnite-project/Agent-Linux` | | GitHub repository that `/install/linux.sh`, `/install/macos.sh` and `/install/windows.ps1` download the agent from (its releases have every platform's binaries). |
 | `NETIGNITE_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the scripts install the newest stable release, or the newest pre-release while there is no stable one. |
 
-The 2.0.0 betas called these `NETIGNITE_LINUX_AGENT_REPO` and `NETIGNITE_LINUX_AGENT_VERSION`;
+Server 2.0.0 called these `NETIGNITE_LINUX_AGENT_REPO` and `NETIGNITE_LINUX_AGENT_VERSION`;
 those still work when the new names aren't set.
 
 ### Email

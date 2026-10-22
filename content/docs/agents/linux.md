@@ -187,7 +187,7 @@ netignite-agent wol AA:BB:CC:DD:EE:FF --port 9
 - writes the [shutdown and reboot units](#shutdown-and-reboot) `netignite-agent-shutdown.path`,
   `netignite-agent-shutdown.service`, `netignite-agent-reboot.path` and
   `netignite-agent-reboot.service`,
-- removes the polkit rule that versions before 1.0.0 wrote, if there is one,
+- removes the polkit rule that versions up to 1.0.0 wrote, if there is one,
 - runs `systemctl daemon-reload`, enables and starts the two `.path` units, and enables and
   (re)starts the service.
 
@@ -284,7 +284,7 @@ the `.path` unit is active and asks systemd-logind for block inhibitors: while s
 package upgrade blocks shutdowns, the dashboard says so and nothing happens. When the agent stops,
 systemd deletes its runtime directory, and a pending request with it.
 
-Versions before 1.0.0 used a polkit rule instead, which failed with *Access denied* on machines
+Versions up to 1.0.0 used a polkit rule instead, which failed with *Access denied* on machines
 without polkit. Run `sudo netignite-agent install` again after updating; it removes the rule.
 
 ## Commands

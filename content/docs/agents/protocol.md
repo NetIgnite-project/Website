@@ -165,8 +165,8 @@ ignored. A later `HELLO` updates the stored capabilities, version and info.
 | `device.reset` | `FACTORY_RESET` | ✓ | | |
 | `ssh.power` | `SSH_CHECK`, `SSH_POWER`, with `ssh_keys` in `HELLO`; only over TLS | ✓ | | ✓ |
 
-The betas' `ssh` capability (with `SSH_EXEC` and credentials from the server) is gone: a 2.0.0
-server never sends SSH requests to an agent that only announces `ssh`.
+The `ssh` capability of server 2.0.0 (with `SSH_EXEC` and credentials from the server) is gone:
+newer servers never send SSH requests to an agent that only announces `ssh`.
 
 `PING` needs no capability. A command without its capability fails on the server with
 *… doesn't support …* and is never sent.

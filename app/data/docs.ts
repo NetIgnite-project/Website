@@ -105,7 +105,8 @@ export const docsSections: DocsSection[] = [
 			{
 				to: "/docs/guides/ssh",
 				title: "SSH",
-				description: "Shut down and reboot devices that can't run the agent, over SSH with the agent's keys.",
+				description:
+					"Shut down and reboot devices that can't run the agent, over SSH with the agent's keys.",
 				icon: "i-lucide-key-square",
 			},
 		],
@@ -128,7 +129,8 @@ export const docsSections: DocsSection[] = [
 			{
 				to: "/docs/agents/windows",
 				title: "Windows Agent",
-				description: "Shut down and restart a Windows PC: install the agent with one PowerShell command.",
+				description:
+					"Shut down and restart a Windows PC: install the agent with one PowerShell command.",
 				icon: "i-lucide-monitor",
 			},
 			{

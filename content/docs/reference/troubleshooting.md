@@ -212,7 +212,7 @@ agent that can log in over SSH. Viewers don't get power actions.
 
 - **Agent on the device:** the dashboard shows why the agent refused. *… can't shut down
   through the agent (netignite-agent-shutdown.path is inactive)*, or on macOS *(… is missing)*: run
-  `sudo netignite-agent install` again, for example after updating from a version before 1.0.0.
+  `sudo netignite-agent install` again, for example after updating from 1.0.0 or older.
   *… blocks shutdown and reboot right now*: a block inhibitor, such as a running package upgrade,
   holds the shutdown (`systemd-inhibit --list`). If the request succeeded but nothing happened,
   check `journalctl -u netignite-agent -u netignite-agent-shutdown` (Linux) or the agent's log
@@ -227,7 +227,7 @@ agent that can log in over SSH. Viewers don't get power actions.
 | `host_key_mismatch` | The device's host key changed. Test again and trust the new key if you expected the change. |
 | *the device didn't accept the agent's shutdown key* (or *reboot key*) | Wrong username, or the `authorized_keys` lines are missing or outdated: copy them again from the **SSH** tab. |
 | *Too many SSH logins (at most 10 a minute)* | The agent limits its SSH logins. Wait the time it says. |
-| *The device's agent can't log in over SSH* | The device's agent doesn't support SSH: a Linux agent without Wake-on-LAN mode, an agent that connects over plain HTTP (SSH needs HTTPS), or an agent from before 2.0.0. |
+| *The device's agent can't log in over SSH* | The device's agent doesn't support SSH: a Linux agent without Wake-on-LAN mode, an agent that connects over plain HTTP (SSH needs HTTPS), or an older agent (ESP32 firmware 2.0.0, Linux agent 1.0.0 or older). |
 
 ## Firmware updates
 
