@@ -105,7 +105,7 @@ export const docsSections: DocsSection[] = [
 			{
 				to: "/docs/guides/ssh",
 				title: "SSH",
-				description: "Shut down and reboot devices over SSH with a restricted key.",
+				description: "Shut down and reboot devices that can't run the agent, over SSH with the agent's keys.",
 				icon: "i-lucide-key-square",
 			},
 		],
@@ -124,6 +124,18 @@ export const docsSections: DocsSection[] = [
 				title: "Linux Agent",
 				description: "Install, pair, host mode and Wake-on-LAN mode of the Linux agent.",
 				icon: "i-lucide-terminal",
+			},
+			{
+				to: "/docs/agents/windows",
+				title: "Windows Agent",
+				description: "Shut down and restart a Windows PC: install the agent with one PowerShell command.",
+				icon: "i-lucide-monitor",
+			},
+			{
+				to: "/docs/agents/macos",
+				title: "macOS Agent",
+				description: "Shut down and restart a Mac: install the agent with one command.",
+				icon: "i-lucide-laptop",
 			},
 			{
 				to: "/docs/agents/protocol",

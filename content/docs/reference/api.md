@@ -102,7 +102,7 @@ All endpoints return the devices you own and the devices shared with you; your r
 | `PUT /devices/<id>` | Change a device (owner, manager; agents: owner only). All fields optional. |
 | `DELETE /devices/<id>` | Delete a device (owner). |
 | `POST /devices/<id>/power-on` | Send Wake-on-LAN (owner, manager, operator). |
-| `POST /devices/<id>/shutdown` | Shut down through the Linux agent on the device or SSH (owner, manager, operator). |
+| `POST /devices/<id>/shutdown` | Shut down through the agent on the device or SSH (owner, manager, operator). |
 | `POST /devices/<id>/reboot` | Reboot, like shutdown. |
 | `POST /devices/<id>/status` | Check the status now and return it (at most every 5 seconds per device). |
 | `PUT /devices/<id>/favorite` | Add to your favorites. `DELETE` removes it. |
@@ -140,13 +140,13 @@ All endpoints return the devices you own and the devices shared with you; your r
 | `status_method` | `none` (default), `link_local`, `ipv4`, `ipv6`, `ssh` or `host_agent`. See [Status checks](/docs/guides/devices#status-checks). |
 | `status_address` | Required for `ipv4` (IPv4 address), `ipv6` (IPv6 address) and `ssh` (IP address or host name). |
 | `status_tcp_port` | Optional extra TCP probe; the port for `ssh` (default `22`). |
-| `host_agent_id` | The Linux agent running on the device, or `null`. |
+| `host_agent_id` | The agent running on the device (a Linux, Windows or macOS agent), or `null`. |
 | `access_role` | `owner`, `manager`, `operator` or `viewer`. |
 | `status` | `state` (`online`, `offline`, `unknown`), `checked_at` and, for `unknown`, a `reason`. |
 | `actions` | Which power actions are possible right now for you. |
 
 Required when creating: `name`, `type` and `mac_address`. Agents must be your own;
-`host_agent_id` must be a Linux agent.
+`host_agent_id` must be a Linux, Windows or macOS agent.
 
 ### Sharing
 
@@ -161,15 +161,29 @@ Owner only, except leaving a device.
 
 ### SSH login
 
-Owner only. The password or private key is never returned. See [SSH](/docs/guides/ssh).
+Owner only. The agent logs in with its own keys, so nothing here is secret. Except `GET` and
+`DELETE`, these need the server setting `ssh_enabled` (`409` *SSH is turned off on this server*
+otherwise). See [SSH](/docs/guides/ssh).
 
 | Method and path | Description |
 | --- | --- |
-| `GET /devices/<id>/ssh` | The login without its secret, with `authorized_keys` and `sudoers` lines. |
-| `PUT /devices/<id>/ssh` | Set the login: `host` (or `null` for the status address), `port`, `username`, `os` (`posix`, `windows`), `sudo`, and `auth`: `{ "type": "generate_key" }`, `{ "type": "password", "password": "…" }` or `{ "type": "keep" }`. |
+| `GET /devices/<id>/ssh` | The login (see below). |
+| `PUT /devices/<id>/ssh` | Set the login: `host` (or `null` for the status address), `port`, `username`, `os` (`posix`, `windows`) and `sudo`. Changing host or port un-trusts the host key. |
 | `DELETE /devices/<id>/ssh` | Remove the login. |
-| `POST /devices/<id>/ssh/test` | Let the device's agent log in and report the host key: `online`, `authenticated`, `host_key`, `trusted`, `error`. |
+| `POST /devices/<id>/ssh/test` | Let the device's agent log in with each of its two keys, without running anything: `online`, `host_key`, `trusted`, `shutdown`, `reboot` (whether the device accepted that key), `error`. |
 | `POST /devices/<id>/ssh/trust` | Trust a host key: `{ "host_key": "SHA256:…" }`. |
+
+| Login field | Description |
+| --- | --- |
+| `enabled` | Whether an admin turned SSH on. |
+| `configured` | Whether the device has a login. |
+| `host`, `effective_host`, `port`, `username`, `os`, `sudo` | The login; `effective_host` is the host the agent connects to (the login's, or the status address). |
+| `host_key` | The trusted host key fingerprint, or `null`. |
+| `authorized_keys` | Two lines for the device: the agent's shutdown key and reboot key, each with its forced command. `null` until the device's agent reported its keys. |
+| `authorized_keys_file` | Where the lines go: `~/.ssh/authorized_keys`, or Windows' `administrators_authorized_keys`. |
+| `sudoers` | The line for `/etc/sudoers.d/netignite` (POSIX with `sudo`), or `null`. |
+| `agent_keys` | Whether the device's agent has reported SSH keys. |
+| `agent_ready` | Whether the device's agent is online and can log in over SSH right now. |
 
 ## Agents
 
@@ -178,7 +192,7 @@ Agents are never shared: these endpoints only see your own.
 | Method and path | Description |
 | --- | --- |
 | `GET /agents` | List agents. |
-| `POST /agents` | Create an agent: `{ "name": "…", "description": "…", "kind": "esp32" \| "linux" }`. |
+| `POST /agents` | Create an agent: `{ "name": "…", "description": "…", "kind": "esp32" \| "linux" \| "windows" \| "macos" }`. |
 | `GET /agents/<id>` | Get an agent. |
 | `PUT /agents/<id>` | Change `name` and `description`. |
 | `DELETE /agents/<id>` | Delete and disconnect. Its devices keep their settings without an agent. |
@@ -202,7 +216,7 @@ Agents are never shared: these endpoints only see your own.
 	"kind": "esp32",
 	"state": "online",
 	"version": "2.0.0",
-	"capabilities": ["wake", "status.link_local", "status.ip", "status.host", "status.tcp", "ota", "logs", "config", "device.reboot", "device.reset", "ssh"],
+	"capabilities": ["wake", "status.link_local", "status.ip", "status.host", "status.tcp", "ota", "logs", "config", "device.reboot", "device.reset", "ssh.power"],
 	"info": { "name": "Office-ESP32", "ipv4": "192.168.1.50", "rssi_dbm": -58 },
 	"last_seen_at": 1792351812000,
 	"enrolled_at": 1792350000000,
@@ -250,7 +264,7 @@ Admins only, with a login token or an admin's API key.
 | `GET /admin/users`, `POST /admin/users` | List users (`?role=`, `?search=`) or create one: `{ "username", "display_name", "email", "password", "role" }`. |
 | `GET`, `PUT`, `DELETE /admin/users/<id>` | Get, change (`display_name`, `email`, `role`, …) or delete a user. |
 | `PUT /admin/users/<id>/password` | Set a user's password and end their logins. |
-| `GET /admin/settings`, `PUT /admin/settings` | `{ "registration_enabled": false, "firmware_channel": "stable" \| "prerelease" }`. |
+| `GET /admin/settings`, `PUT /admin/settings` | `{ "registration_enabled": false, "firmware_channel": "stable" \| "prerelease", "ssh_enabled": false }`. |
 | `GET /admin/firmware` | The firmware sync state. |
 | `POST /admin/firmware/sync` | Sync firmware releases from GitHub now. |
 
@@ -263,6 +277,8 @@ Admins only, with a login token or an admin's API key.
 | `/ws/agent` | The agent WebSocket. See [Agent Protocol](/docs/agents/protocol). |
 | `/ws/console` | The live log of an agent, for the dashboard. See [below](#the-console-websocket). |
 | `GET /install/linux.sh` | The Linux agent's install script. See [Linux Agent](/docs/agents/linux#install). |
+| `GET /install/macos.sh` | The macOS agent's install script. See [macOS Agent](/docs/agents/macos#install). |
+| `GET /install/windows.ps1` | The Windows agent's install script (PowerShell). See [Windows Agent](/docs/agents/windows#install). |
 
 ### The console WebSocket
 

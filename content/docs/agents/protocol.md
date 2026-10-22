@@ -42,8 +42,8 @@ Content-Type: application/json
 { "enrollment_token": "netignite_enroll_…", "secret": "<the agent's secret>", "kind": "linux" }
 ```
 
-`kind` (`esp32` or `linux`) is optional. With it, the server refuses a token that belongs to an
-agent of another kind before using it up.
+`kind` (`esp32`, `linux`, `windows` or `macos`) is optional. With it, the server refuses a token
+that belongs to an agent of another kind before using it up.
 
 ```json
 {
@@ -126,20 +126,30 @@ The first frame the agent sends. It must arrive within 10 seconds of connecting.
 }
 ```
 
+An agent that logs in to other devices over SSH (`ssh.power`) also sends its public keys:
+
+```json
+"ssh_keys": {
+	"shutdown": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI…",
+	"reboot": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI…"
+}
+```
+
 | Field | Description |
 | --- | --- |
 | `protocol` | `2`. |
-| `kind` | `esp32` or `linux`; must match the agent's kind in the dashboard. |
+| `kind` | `esp32`, `linux`, `windows` or `macos`; must match the agent's kind in the dashboard. |
 | `version` | The agent's version, 1–64 characters. Shown in the dashboard and compared for firmware updates. |
 | `capabilities` | What the agent supports, up to 64 strings. Unknown ones are kept, so newer agents work with older servers. |
 | `info` | Optional diagnostics, shown as key/value pairs on the agent's page. |
+| `ssh_keys` | With `ssh.power`: the agent's Ed25519 public keys, `ssh-ed25519 <base64>` without a comment, one for shutdown and one for reboot. The dashboard shows them as `authorized_keys` lines. Invalid keys are dropped. |
 
 An invalid `HELLO` closes the connection with `4001`. Events other than `HELLO` before it are
 ignored. A later `HELLO` updates the stored capabilities, version and info.
 
 ## Capabilities
 
-| Capability | Enables | ESP32 | Linux, host mode | Linux, Wake-on-LAN mode |
+| Capability | Enables | ESP32 | Linux, Windows, macOS (host mode) | Linux, Wake-on-LAN mode |
 | --- | --- | --- | --- | --- |
 | `wake` | `WAKE` | ✓ | | ✓ |
 | `status.link_local` | `STATUS` with a `link_local` target | ✓ | | ✓ |
@@ -153,7 +163,10 @@ ignored. A later `HELLO` updates the stored capabilities, version and info.
 | `config` | `GET_INFO`, `CONFIG_SET` | ✓ | | |
 | `device.reboot` | `REBOOT` | ✓ | | |
 | `device.reset` | `FACTORY_RESET` | ✓ | | |
-| `ssh` | `SSH_CHECK`, `SSH_EXEC` | ✓ | | ✓ |
+| `ssh.power` | `SSH_CHECK`, `SSH_POWER`, with `ssh_keys` in `HELLO`; only over TLS | ✓ | | ✓ |
+
+The betas' `ssh` capability (with `SSH_EXEC` and credentials from the server) is gone: a 2.0.0
+server never sends SSH requests to an agent that only announces `ssh`.
 
 `PING` needs no capability. A command without its capability fails on the server with
 *… doesn't support …* and is never sent.
@@ -167,8 +180,9 @@ time*).
 | --- | --- |
 | `WAKE`, `GET_LOGS`, `GET_INFO`, `CONFIG_SET`, `REBOOT`, `FACTORY_RESET` | 5 s |
 | `STATUS` | 6 s |
-| `PING`, `HOST_CONTROL`, `OTA_BEGIN`, `LOG_SUBSCRIBE`, `SSH_CHECK` | 10 s |
-| `SSH_EXEC` | 15 s |
+| `PING`, `HOST_CONTROL`, `OTA_BEGIN`, `LOG_SUBSCRIBE` | 10 s |
+| `SSH_POWER` | 15 s |
+| `SSH_CHECK` (two logins) | 25 s |
 
 ### PING
 
@@ -277,27 +291,28 @@ and keeps it only if it reaches the server within 2 minutes.
 
 ### SSH_CHECK
 
-Log in to a device over SSH without opening a session, so no command (not even a forced one) runs.
+Log in to a device with each of the agent's two keys, without opening a session, so no command
+(not even a forced one) runs. There are no credentials in the request: the agent uses its own keys.
 
 | Request field | Type | Description |
 | --- | --- | --- |
 | `host` | string | Host name or IP address. |
 | `port` | number | SSH port. |
 | `username` | string | User name. |
-| `auth` | object | `{ "type": "password", "password": "…" }` or `{ "type": "key", "private_key": "-----BEGIN OPENSSH PRIVATE KEY-----…" }`. |
-| `host_key` | string \| null | The trusted host key fingerprint (`SHA256:…`), or `null` before it's trusted. If the device presents another key, stop before sending any credential. |
+| `host_key` | string \| null | The trusted host key fingerprint (`SHA256:…`), or `null` before it's trusted. If the device presents another key, stop before offering a key. |
 
 | Answer field | Type | Description |
 | --- | --- | --- |
 | `online` | boolean | Whether the SSH port accepted the connection. |
 | `host_key` | string | The device's host key fingerprint, `SHA256:` plus unpadded base64 (as `ssh-keygen -l` shows it). |
-| `authenticated` | boolean | Whether the login worked. |
-| `error` | string | `host_key_mismatch`, `auth_failed` or a short message. |
+| `shutdown`, `reboot` | boolean | Whether the device accepted the shutdown key / the reboot key. |
+| `error` | string | `host_key_mismatch` or a short message. |
 
-### SSH_EXEC
+### SSH_POWER
 
-Log in and run a fixed shutdown or reboot command. The request contains the `SSH_CHECK` fields
-(with a trusted `host_key`, never `null`) and:
+Log in with the action's key and request a fixed shutdown or reboot command (the device's
+`authorized_keys` line forces the same one for that key). The request contains the `SSH_CHECK`
+fields (with a trusted `host_key`, never `null`) and:
 
 | Request field | Type | Description |
 | --- | --- | --- |
@@ -306,8 +321,8 @@ Log in and run a fixed shutdown or reboot command. The request contains the `SSH
 | `sudo` | boolean | POSIX: prefix the command with `sudo -n `. |
 
 Answer `{}` when the command ran (or the connection dropped because the device went down), or
-`ok: false` with the error, for example `sudo: a password is required`. Never run anything else, and
-don't keep the credentials after the request.
+`ok: false` with the error, for example `sudo: a password is required`. Never run anything else.
+Agents offer `ssh.power` only over TLS and refuse more than 10 SSH logins a minute.
 
 ## Events
 

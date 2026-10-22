@@ -142,7 +142,8 @@ Open **Agents**. The imported agents show **Not set up**; their devices still po
 - **Server agents** (your own v1 agents) don't work with v2: the
   [protocol](/docs/agents/protocol) changed. Install the [Linux agent](/docs/agents/linux) on the
   machine instead (turn on Wake-on-LAN mode to wake other devices), or update your agent to
-  protocol v2.
+  protocol v2. On Windows and macOS machines, the [Windows](/docs/agents/windows) and
+  [macOS](/docs/agents/macos) agents shut them down and reboot them.
 
 As each agent comes online, its devices can be woken again.
 
@@ -151,7 +152,8 @@ As each agent comes online, its devices can be woken again.
 The imported devices keep the v1 status check, which doesn't work for most Windows and many Linux
 machines. Open each device and choose a better [status check](/docs/guides/devices#status-checks),
 for example its IPv4 address. While you're there, consider [sharing](/docs/guides/sharing),
-shutdown through the [Linux agent](/docs/agents/linux#host-mode) or over [SSH](/docs/guides/ssh).
+shutdown through the agent on the device ([Linux](/docs/agents/linux#host-mode),
+[Windows](/docs/agents/windows), [macOS](/docs/agents/macos)) or over [SSH](/docs/guides/ssh).
 
 ::
 

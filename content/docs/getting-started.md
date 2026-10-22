@@ -18,7 +18,8 @@ This guide takes you from an empty machine to your first remote wake-up. You nee
 ::tip
 Using the hosted app at [app.netignite.dev](https://app.netignite.dev/)? Skip steps 1 and 2, log
 in, and continue with step 3. No ESP32? A [Linux agent](/docs/agents/linux) on an always-on Linux
-machine in the same network works too.
+machine in the same network works too. To shut down and reboot a PC or a Mac, install the agent on
+it: [Windows](/docs/agents/windows), [macOS](/docs/agents/macos).
 ::
 
 ::steps{level="3"}

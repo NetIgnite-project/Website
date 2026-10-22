@@ -15,7 +15,7 @@ licensed under the [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html).
 | --- | --- |
 | [Server](https://github.com/NetIgnite-project/Server) | Nuxt 4, Nuxt UI, Hono with Zod and OpenAPI, Drizzle ORM on `bun:sqlite`, Bun |
 | [Agent-ESP32](https://github.com/NetIgnite-project/Agent-ESP32) | C++17, Arduino-ESP32 3.3 on ESP-IDF 5.5 (pioarduino), PlatformIO |
-| [Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux) | TypeScript, Bun, compiled into single binaries |
+| [Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux) | TypeScript, Bun, compiled into single binaries for Linux, Windows and macOS |
 | [Website](https://github.com/NetIgnite-project/Website) | Nuxt 4, Nuxt UI, Nuxt Content, Tailwind CSS, static generation |
 
 ## Branches and releases
@@ -27,7 +27,7 @@ v2 is developed on the `v2` branches of Server and Agent-ESP32, and their `main`
 | --- | --- |
 | Server | The manual GitHub Actions workflow **Create Release** builds, tests, creates the GitHub release and publishes the Docker image. Stable releases (which move the image's `latest` tag) only run from `main`; pre-releases such as `2.0.0-beta.1` from any branch. |
 | Agent-ESP32 | Pushing a tag `v<version>` builds, tests and publishes a release with the flash images and `release.json`. Versions with a suffix become pre-releases. |
-| Agent-Linux | Pushing a tag `v<version>` that matches `package.json` builds the three binaries and `SHA256SUMS`. Versions with a suffix become pre-releases. |
+| Agent-Linux | Pushing a tag `v<version>` that matches `package.json` builds the six binaries (Linux x64, x64-baseline, arm64; Windows x64; macOS x64, arm64) and `SHA256SUMS`. Versions with a suffix become pre-releases. |
 | Website | Every push to `main` is deployed to netignite.dev. Docs for unreleased versions live on a separate branch until the release. |
 
 The agents and the server talk over the [agent protocol v2](/docs/agents/protocol); its source of
@@ -92,10 +92,10 @@ bun run dev version
 | Command | What it does |
 | --- | --- |
 | `bun run dev <command>` | Runs the agent from source with file watching, for example `bun run dev run --config ./agent.json`. |
-| `bun test` | Unit and integration tests against a fake server and an SSH server. |
+| `bun test` | Unit and integration tests against a fake server and an SSH server. The **Platforms** workflow also installs the agent on Windows and macOS runners. |
 | `bun run typecheck` | TypeScript check. |
 | `bun run check` | Biome. |
-| `bun run compile all --no-version-tag` | Builds `build/bin/netignite-agent-linux-{x64,x64-baseline,arm64}`. |
+| `bun run compile all --no-version-tag` | Builds `build/bin/netignite-agent-linux-{x64,x64-baseline,arm64}`, `netignite-agent-windows-x64.exe` and `netignite-agent-macos-{x64,arm64}`. |
 
 Pair a development agent with a config outside `/etc`:
 `bun run dev pair http://localhost:18232 <token> --config ./agent.json`. `install` only works from

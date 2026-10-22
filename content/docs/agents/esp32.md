@@ -142,7 +142,7 @@ The agent implements these commands of the [agent protocol](/docs/agents/protoco
 | --- | --- |
 | `WAKE` | Sends the magic packet three times, 100 ms apart, to its subnet's broadcast address and to `255.255.255.255`. |
 | `STATUS` | Pings the device twice with a 1-second timeout (IPv4, IPv6, or the IPv6 link-local address derived from the MAC address) and tries the TCP port, if one is set. A refused TCP connection also counts as online. Host names resolve to IPv4 and IPv6 addresses. |
-| `SSH_CHECK`, `SSH_EXEC` | Logs in to a device over SSH (one login at a time). See [SSH](/docs/guides/ssh). |
+| `SSH_CHECK`, `SSH_POWER` | Logs in to a device over SSH with the agent's own keys (one login at a time, at most 10 a minute, only over HTTPS). See [SSH](/docs/guides/ssh). |
 | `OTA_BEGIN` | Installs a firmware update; see [below](#updates-over-the-network). |
 | `GET_LOGS`, `LOG_SUBSCRIBE` | Sends its stored log (the last 16 KB, including ESP-IDF's own messages) and new lines for the dashboard's console. |
 | `GET_INFO`, `CONFIG_SET` | Reports diagnostics; changes the server address, host name, log level and IP settings. |
