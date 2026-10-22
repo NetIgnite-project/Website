@@ -87,18 +87,21 @@ The running agent restarts with the new credential.
   `LOCAL SERVICE` only (`pair` already restricts the folder: below `ProgramData`, every user could
   read it otherwise),
 - gives `LOCAL SERVICE` write access to the log folder `C:\ProgramData\NetIgnite\logs`,
+- grants `LOCAL SERVICE` the right to shut the PC down, in the local security policy (`uninstall`
+  takes it back; Windows doesn't grant that account the right itself),
 - registers the scheduled task **NetIgnite Agent**: started at boot, before anyone logs in, as
   `LOCAL SERVICE`; restarted once a minute if it stops; no time limit; also on battery,
 - starts it.
 
 The permissions are set by the accounts' SIDs, so it works on Windows in any language. The task is
-visible in the Task Scheduler; don't change it there, run `install` again instead.
+visible in the Task Scheduler; don't change it there, run `install` again instead. The shutdown
+right shows up under *Shut down the system* in the Local Security Policy.
 
 ## Shutdown and restart
 
-The server sends `HOST_CONTROL` with `shutdown` or `reboot`. `LOCAL SERVICE` may shut the PC down,
-so the agent answers and runs `shutdown.exe /s /t 0 /d p:0:0` (or `/r` to restart) itself. That's
-the only program it runs. Windows asks the open programs to close; one with unsaved changes can
+The server sends `HOST_CONTROL` with `shutdown` or `reboot`. The agent answers and runs
+`shutdown.exe /s /t 0 /d p:0:0` (or `/r` to restart) itself, using the right that `install` granted.
+That's the only program it runs. Windows asks the open programs to close; one with unsaved changes can
 hold up the shutdown until someone answers on the PC.
 
 ## Commands
@@ -135,5 +138,6 @@ Delete the agent in the dashboard too.
   server stores only a hash. The config folder is readable for administrators, `SYSTEM` and the
   agent only. Use an `https://` server address outside your LAN.
 - **The account** `LOCAL SERVICE` is Windows' built-in account for services with minimal rights:
-  it can't read your user folders or change the system, but it may shut down. The agent needs no
-  administrator rights after the installation.
+  it can't read your user folders or change the system. Its one extra right, to shut down, was
+  granted by `install` and is taken back by `uninstall`. The agent needs no administrator rights
+  after the installation.
