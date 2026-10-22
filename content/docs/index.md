@@ -14,8 +14,8 @@ dashboard, the server tells the agent to send a
 [Wake-on-LAN](https://en.wikipedia.org/wiki/Wake-on-LAN) magic packet to the device.
 
 ::note
-These docs describe **NetIgnite v2**: the server 2.x, the ESP32 firmware 2.x and the Linux agent
-1.x. v1 agents can't connect to a v2 server. Coming from v1? Read
+These docs describe **NetIgnite v2**: the server 2.x, the ESP32 firmware 2.x and the NetIgnite
+agent 1.x for Linux, Windows and macOS. v1 agents can't connect to a v2 server. Coming from v1? Read
 [Upgrading from v1](/docs/server/upgrading).
 ::
 
@@ -25,7 +25,7 @@ These docs describe **NetIgnite v2**: the server 2.x, the ESP32 firmware 2.x and
 | --- | --- | --- |
 | **Server** | Web dashboard, REST API and the WebSocket gateway that agents connect to. Stores users, agents and devices in SQLite. | [NetIgnite-project/Server](https://github.com/NetIgnite-project/Server) |
 | **ESP32 agent** | Firmware for an ESP32 board in your LAN. Wakes devices, checks whether they're online and can shut them down over SSH. Installed from the browser and updated over the network. | [NetIgnite-project/Agent-ESP32](https://github.com/NetIgnite-project/Agent-ESP32) |
-| **Linux agent** | A systemd service for a Linux machine. Reports the machine's status and shuts it down or reboots it; optionally wakes and checks other devices in its network, like the ESP32 agent. | [NetIgnite-project/Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux) |
+| **Agent for Linux, Windows and macOS** | A service on a computer. Reports the machine's status and shuts it down or reboots it; on Linux it optionally also wakes and checks other devices in its network, like the ESP32 agent. | [NetIgnite-project/Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux) |
 | **Website** | This site, including the docs. | [NetIgnite-project/Website](https://github.com/NetIgnite-project/Website) |
 
 You can use the hosted app at [app.netignite.dev](https://app.netignite.dev/) or run your own
@@ -36,8 +36,9 @@ server. All components are open source under the
 
 - **Power on** devices with Wake-on-LAN through an agent in their network.
 - **Check** whether a device is online: by its IPv4 or IPv6 address, a TCP port, its MAC address
-  (IPv6 link-local), its SSH port, or the Linux agent running on it.
-- **Shut down and reboot** devices through the Linux agent on the device, or over SSH.
+  (IPv6 link-local), its SSH port, or the agent running on it.
+- **Shut down and reboot** devices through the NetIgnite agent on the device (Linux, Windows,
+  macOS), or over SSH for devices that can't run it.
 - **Share** devices with other users as viewer, operator or manager.
 - **Install the ESP32 agent from the browser** and keep it up to date with over-the-air updates.
 - **Automate** with the REST API and API keys.
@@ -68,6 +69,10 @@ cards:
     title: Linux Agent
     description: Install the agent as a systemd service with one command.
     to: /docs/agents/linux
+  - icon: i-lucide-monitor
+    title: Windows and macOS
+    description: The same agent on a PC or a Mac, to shut it down and reboot it.
+    to: /docs/agents/windows
   - icon: i-lucide-history
     title: Upgrading from v1
     description: Import your v1 data and set your agents up again.

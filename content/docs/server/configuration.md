@@ -40,7 +40,6 @@ of them to paths inside the container (*Docker image* column).
 | `NETIGNITE_APP_URL` | *required* | | The public URL of the dashboard, for example `https://netignite.example.com`, without a path. See [below](#the-public-url). |
 | `NETIGNITE_LOG_LEVEL` | `info` | | `debug`, `info`, `warn`, `error` or `critical`. |
 | `NETIGNITE_API_DISABLE_DOCS` | `false` | | `true` turns off the OpenAPI reference at `/api/docs/v1` and its spec. |
-| `NETIGNITE_SECRETS_KEY` | *generated* | | Key that encrypts stored SSH passwords and private keys. Without it, the server generates one in `<config dir>/secrets.key`. Any string; use a long random one, for example from `openssl rand -hex 32`. Changing it later makes stored SSH logins unreadable. |
 
 ### Paths and database
 
@@ -49,7 +48,7 @@ of them to paths inside the container (*Docker image* column).
 | `NETIGNITE_DB_PATH` | `./data/netignite.sqlite` | `/opt/netignite/data/netignite.sqlite` | The SQLite database. |
 | `NETIGNITE_DB_AUTO_MIGRATE` | `true` | `true` | Apply database migrations at startup. |
 | `NETIGNITE_DB_MIGRATION_DIR` | `./drizzle/migrations` | `/opt/netignite/app/drizzle/migrations` | Where the migrations are. |
-| `NETIGNITE_CONFIG_BASE_DIR` | `./config` | `/opt/netignite/config` | Directory for `secrets.key` and `initial_admin_password_reset_token.txt`. |
+| `NETIGNITE_CONFIG_BASE_DIR` | `./config` | `/opt/netignite/config` | Directory for `initial_admin_password_reset_token.txt`. |
 | `NETIGNITE_LOG_DIR` | `./data/logs` | `/opt/netignite/data/logs` | Log files of background tasks. The server's own log goes to stdout. |
 
 ### ESP32 firmware
@@ -62,12 +61,15 @@ of them to paths inside the container (*Docker image* column).
 | `NETIGNITE_FIRMWARE_PUBLIC_KEY` | — | | Path to a PEM file with an ECDSA P-256 public key. When set, only releases with a valid `firmware.sig` are synced. If the file can't be read, every sync fails with the reason (shown in Server Settings) and no firmware is accepted. |
 | `NETIGNITE_GITHUB_TOKEN` | — | | A GitHub token for the release sync; raises GitHub's API rate limit. |
 
-### Linux agent installer
+### Agent installer
 
 | Variable | Default | Docker image | Description |
 | --- | --- | --- | --- |
-| `NETIGNITE_LINUX_AGENT_REPO` | `NetIgnite-project/Agent-Linux` | | GitHub repository that `/install/linux.sh` downloads the agent from. |
-| `NETIGNITE_LINUX_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the script installs the newest stable release, or the newest pre-release while there is no stable one. |
+| `NETIGNITE_AGENT_REPO` | `NetIgnite-project/Agent-Linux` | | GitHub repository that `/install/linux.sh`, `/install/macos.sh` and `/install/windows.ps1` download the agent from (its releases have every platform's binaries). |
+| `NETIGNITE_AGENT_VERSION` | — | | A release tag such as `v1.0.0`. Without it, the scripts install the newest stable release, or the newest pre-release while there is no stable one. |
+
+The 2.0.0 betas called these `NETIGNITE_LINUX_AGENT_REPO` and `NETIGNITE_LINUX_AGENT_VERSION`;
+those still work when the new names aren't set.
 
 ### Email
 
@@ -103,8 +105,8 @@ To use another port with Docker, change the published port instead, for example 
 - the API only allows cross-origin requests from it, and the agent console (`/ws/console`) only
   accepts connections from a page on it,
 - password-reset links and the first admin's link point to it,
-- the ESP32 web installer and the Linux agent's setup command use it as the server address for
-  agents (you can change the address the ESP32 uses in the installer).
+- the ESP32 web installer and the setup commands of the Linux, Windows and macOS agents use it as
+  the server address for agents (you can change the address the ESP32 uses in the installer).
 
 If users open NetIgnite under another address, the dashboard can't reach its API. Use one public
 host name, at the root of the host (no sub-path), with HTTPS.
@@ -117,6 +119,7 @@ Admins find these under **Admin → Server Settings**. They're stored in the dat
 | --- | --- | --- |
 | **Public sign-up** | off | Anyone who can open the server can create an account at `/auth/signup`. See [Users & Accounts](/docs/server/users#public-sign-up). |
 | **Default channel** | Stable releases | Which ESP32 firmware release is recommended in the installer and offered as an update: *Stable releases* or *Include pre-releases*. Users can still pick any synced release. |
+| **Shutdown and reboot over SSH** | off | Lets device owners set up [SSH](/docs/guides/ssh) for devices that can't run the NetIgnite agent. The server stores no SSH secrets either way. Turned off, no SSH request is sent, even for logins set up before. |
 
 The same page shows the firmware sync state, the synced releases and the **Sync now** button.
 
@@ -144,7 +147,6 @@ how releases are signed.
 | --- | --- |
 | `/opt/netignite/data/netignite.sqlite` | Database: users, sessions, API keys, agents, devices, shares, favorites, SSH logins, firmware list, settings. |
 | `/opt/netignite/data/firmware/` | Synced firmware. Can be deleted; the next sync downloads it again. |
-| `/opt/netignite/config/secrets.key` | Encrypts SSH passwords and private keys. Back it up with the database. |
 | `/opt/netignite/config/initial_admin_password_reset_token.txt` | The first admin's password link. Delete it after use. |
 
 To back up the server, stop it and copy the `data/` and `config/` directories.

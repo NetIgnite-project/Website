@@ -21,7 +21,7 @@ Each share has a role:
 | Add it to their favorites | ✓ | ✓ | ✓ | ✓ |
 | **Power on**, **Shut down**, **Reboot** | ✓ | ✓ | ✓ | |
 | Edit name, type, description, MAC address, port and status check | ✓ | ✓ | | |
-| Choose the agent and the Linux agent on the device | ✓ | | | |
+| Choose the agent and the agent on the device | ✓ | | | |
 | Set up the SSH login | ✓ | | | |
 | Share the device, change and remove shares | ✓ | | | |
 | Delete the device | ✓ | | | |

@@ -12,8 +12,9 @@ networks, and the **devices** you want to control.
 
 ```text
  Browser ──HTTPS──▶ NetIgnite Server ◀──WebSocket── Agent ──Wake-on-LAN / ping / SSH──▶ Devices
-                    (dashboard, API,    (outbound     (ESP32 or      (same LAN as the agent)
-                     agent gateway)      from the LAN)  Linux agent)
+                    (dashboard, API,    (outbound     (ESP32, or the     (same LAN as the agent)
+                     agent gateway)      from the LAN)  agent for Linux,
+                                                        Windows, macOS)
 ```
 
 ## Concepts
@@ -25,19 +26,20 @@ and `/ws/console` (the live log of an ESP32 agent). Everything uses one port: `1
 
 **Agent.** A program inside your network that connects *out* to the server over a WebSocket and
 waits for commands. Because the agent dials out, you don't need port forwarding or a VPN into the
-network you want to control. There are two kinds:
+network you want to control. There are these kinds:
 
 | Kind | Runs on | Does |
 | --- | --- | --- |
 | [ESP32](/docs/agents/esp32) | An ESP32 board in your LAN | Wakes and checks devices in its network, logs in to them over SSH, updates itself over the network. |
 | [Linux agent](/docs/agents/linux) | A Linux machine with systemd | Reports the machine's own status and shuts it down or reboots it. In Wake-on-LAN mode, also wakes, checks and logs in to other devices in its network. |
+| [Windows agent](/docs/agents/windows), [macOS agent](/docs/agents/macos) | A Windows 10/11 PC, a Mac | The same agent in host mode: reports the machine's own status and shuts it down or reboots it. |
 
 You can also [write your own agent](/docs/agents/protocol).
 
 **Device.** A machine you want to control: a desktop PC, server, laptop, printer or NAS. A device
 record stores the device's **MAC address**, the **Wake-on-LAN port** (usually `9`), the **agent**
-that wakes it, how its **status is checked**, and optionally the **Linux agent running on it** and
-an **SSH login**. The agent must be in the same local network (broadcast domain) as the device.
+that wakes it, how its **status is checked**, and optionally the **agent running on it** and an
+**SSH login**. The agent must be in the same local network (broadcast domain) as the device.
 
 Agents and devices belong to the user who created them. Agents are never shared; devices can be
 [shared](/docs/guides/sharing) with other users.
@@ -48,7 +50,7 @@ An agent proves who it is with a credential that only the agent knows:
 
 1. In the dashboard, the agent's owner creates a **single-use enrollment token**
    (`netignite_enroll_…`, valid for 15 minutes). The ESP32 web installer writes it into the
-   board's flash; for the Linux agent it's part of the setup command.
+   board's flash; for the Linux, Windows and macOS agent it's part of the setup command.
 2. The agent generates a random **secret** itself and sends it with the token to
    `POST /api/v1/agents/enroll`. The server stores only a hash of the secret and answers with a
    token ID.
@@ -87,7 +89,7 @@ device page runs one immediately (at most every 5 seconds per device).
 | MAC (IPv6 link-local) | The agent pings the IPv6 link-local address derived from the MAC address (EUI-64). |
 | IPv4 address / IPv6 address | The agent pings the address you enter. |
 | SSH port | The agent tries a TCP connection to port 22 (or the port you enter). |
-| Linux agent on the device | The device is online while the Linux agent running on it is connected. |
+| Agent on the device | The device is online while the agent running on it (Linux, Windows or macOS) is connected. |
 
 For the first three, you can add a **TCP port** (for example `445` or `3389`): the device then also
 counts as online when that port answers. See [Devices](/docs/guides/devices#status-checks) for
@@ -103,14 +105,16 @@ when to use which.
 
 Shutdown and reboot need one of two things:
 
-- **The Linux agent on the device** (preferred). The server sends it `HOST_CONTROL`, and the agent
-  runs `systemctl poweroff` or `systemctl reboot`. It can't do anything else, and the server holds
-  no login to the device.
-- **An SSH login.** The device's agent logs in to the device over SSH and runs a fixed `shutdown`
-  command. The device's host key must have been trusted first. The server stores the login, so it
-  should belong to a user that may only shut down and reboot. See [SSH](/docs/guides/ssh).
+- **The agent on the device** (preferred). The server sends it `HOST_CONTROL`. On Linux and macOS
+  the agent, which has no right to shut down, asks a small root service that does nothing else; on
+  Windows it runs `shutdown.exe` as `LOCAL SERVICE`. It can't do anything else, and no login to the
+  device exists.
+- **An SSH login** (if an admin turned SSH on). The device's agent logs in to the device with a key
+  of its own and runs a fixed `shutdown` command, which the device's `authorized_keys` line forces
+  for that key. The device's host key must have been trusted first. The server stores no password
+  or private key. See [SSH](/docs/guides/ssh).
 
-If a device has both, the server uses the Linux agent while it's online.
+If a device has both, the server uses the agent on the device while it's online.
 
 ## Where data lives
 
@@ -118,7 +122,7 @@ If a device has both, the server uses the Linux agent while it's online.
 | --- | --- |
 | Users, sessions, API keys, agents, devices, shares, favorites, SSH logins, the firmware list | SQLite database `data/netignite.sqlite` |
 | Agent credentials, session tokens, API keys | Only as hashes in the database |
-| SSH passwords and private keys | Encrypted in the database with the secrets key (`config/secrets.key` or `NETIGNITE_SECRETS_KEY`) |
+| SSH private keys | Only on the agents (ESP32 flash, the Linux agent's config); the server knows the public keys |
 | ESP32 firmware releases | `data/firmware/<version>/`, downloaded from GitHub |
 | Agent connections, device status, firmware update progress | Server memory: agents reconnect and statuses are checked again after a restart |
 

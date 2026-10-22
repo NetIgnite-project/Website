@@ -68,7 +68,6 @@ docker run -d \
 | `/opt/netignite/data/netignite.sqlite` | The SQLite database |
 | `/opt/netignite/data/firmware/` | ESP32 firmware releases downloaded from GitHub |
 | `/opt/netignite/data/logs/` | Log files of background tasks |
-| `/opt/netignite/config/secrets.key` | Key that encrypts stored SSH passwords and private keys, created on first use |
 | `/opt/netignite/config/initial_admin_password_reset_token.txt` | The password link for the first admin |
 | `/opt/netignite/app/` | The application (part of the image, not a volume) |
 
@@ -76,7 +75,7 @@ The container listens on port `18232` on all interfaces (IPv4 and IPv6). The das
 API, the OpenAPI reference (`/api/docs/v1`) and the WebSockets `/ws/agent` and `/ws/console` all
 share this port. Docker checks the container's health with `GET /api/health`.
 
-Back up both volumes. Without `secrets.key`, stored SSH logins can't be decrypted.
+Back up both volumes.
 
 ## First start
 

@@ -1,6 +1,6 @@
 ---
 title: "Linux Agent"
-description: "The NetIgnite agent for Linux: install it with one command, pair it, host mode and Wake-on-LAN mode, the systemd service, polkit, uninstalling and security."
+description: "The NetIgnite agent for Linux: install it with one command, pair it, host mode and Wake-on-LAN mode, the systemd service, shutdown and reboot, uninstalling and security."
 navigation:
   title: Linux Agent
 ---
@@ -18,13 +18,12 @@ navigation:
 
 The agent is a single binary that runs as a systemd service under its own unprivileged user. It
 talks to the server over one outgoing WebSocket; nothing listens on the machine. Source and
-releases: [NetIgnite-project/Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux).
+releases: [NetIgnite-project/Agent-Linux](https://github.com/NetIgnite-project/Agent-Linux). The
+same agent runs on [Windows](/docs/agents/windows) and [macOS](/docs/agents/macos), in host mode.
 
 ## Requirements
 
 - Linux with systemd, on a 64-bit x86 or ARM CPU.
-- polkit, for shutdown and reboot (`apt install polkitd` on Debian and Ubuntu, `dnf install polkit`
-  on Fedora). Without it, the agent runs, but shutdown and reboot fail.
 - Wake-on-LAN mode: `ping` (iputils or BusyBox) and `ip` (iproute2).
 - `curl` and `sha256sum` for the install script.
 
@@ -57,15 +56,15 @@ The script, served by your NetIgnite server:
 The agent shows up as online on its page. Then:
 
 - To control **this machine**, open (or add) the device for it, choose the agent under
-  **Linux agent on the device**, and choose the status check **Linux agent on the device**. The
-  device gets **Shut down** and **Reboot**.
+  **Agent on the device**, and choose the status check **Agent on the device**. The device gets
+  **Shut down** and **Reboot**.
 - To **wake other devices**, turn on [Wake-on-LAN mode](#wake-on-lan-mode) and choose the agent as
   the **Agent** of those devices.
 
 By default, the script installs the newest stable release (a pre-release only while there is no
-stable one). The server's admin can pin a release with `NETIGNITE_LINUX_AGENT_VERSION` or use
-another repository with `NETIGNITE_LINUX_AGENT_REPO` (see
-[Configuration](/docs/server/configuration#linux-agent-installer)).
+stable one). The server's admin can pin a release with `NETIGNITE_AGENT_VERSION` or use another
+repository with `NETIGNITE_AGENT_REPO` (see
+[Configuration](/docs/server/configuration#agent-installer)).
 On the machine, the variables `NETIGNITE_AGENT_VERSION` (a release tag) and
 `NETIGNITE_AGENT_BASE_URL` (a mirror with the release files) override that; pass them through
 `sudo env`:
@@ -138,15 +137,14 @@ In host mode, the agent announces the capabilities `host.status` and `host.contr
 then:
 
 - show the machine as online while the agent is connected (status check
-  *Linux agent on the device*),
-- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent first asks systemd-logind whether it
-  may (`CanPowerOff`/`CanReboot`); if not (polkit rule missing, or a block inhibitor such as a
-  running package upgrade), it answers with the reason, which the dashboard shows. Otherwise it
-  answers, waits about a second and runs `systemctl --no-ask-password poweroff` or
-  `systemctl --no-ask-password reboot`.
+  *Agent on the device*),
+- send `HOST_CONTROL` with `shutdown` or `reboot`. The agent first checks that it can (see
+  [Shutdown and reboot](#shutdown-and-reboot)); if not, for example while a running package
+  upgrade blocks shutdowns, it answers with the reason, which the dashboard shows. Otherwise it
+  answers, waits about a second and asks systemd to power off or reboot.
 
-Nothing else: the server can't run commands, read files or change the configuration. If
-`systemctl` still fails after the answer, the error is in the agent's journal.
+Nothing else: the server can't run commands, read files or change the configuration. If the
+shutdown still fails after the answer, the error is in the agent's journal.
 
 ## Wake-on-LAN mode
 
@@ -156,7 +154,8 @@ sudo netignite-agent wol-mode off
 ```
 
 `wol-mode` updates the config and the installed service, and restarts it. In this mode, the agent
-also announces `wake`, `status.link_local`, `status.ip`, `status.host`, `status.tcp` and `ssh`:
+also announces `wake`, `status.link_local`, `status.ip`, `status.host` and `status.tcp`, and
+`ssh.power` if it connects over HTTPS:
 
 - **Wake:** a magic packet over UDP to `255.255.255.255` and each network interface's broadcast
   address, three times, 100 ms apart.
@@ -165,7 +164,10 @@ also announces `wake`, `status.link_local`, `status.ip`, `status.host`, `status.
   (`ip neigh`): a reachable entry for the MAC address counts as online. Otherwise it pings the
   IPv6 link-local address derived from the MAC address and the addresses the neighbor table knows
   for it. Every check answers within 4.5 seconds.
-- **SSH:** logins to devices in the network for [shutdown and reboot over SSH](/docs/guides/ssh).
+- **SSH:** logins to devices in the network for [shutdown and reboot over SSH](/docs/guides/ssh),
+  with two Ed25519 keys of the agent's own (one for shutdown, one for reboot). `pair` creates them
+  in the config (`install` and `wol-mode on` for older configs); pairing again keeps them. Only the
+  public keys leave the machine, in the agent's `HELLO`. At most 10 SSH logins a minute.
 
 To test Wake-on-LAN from the machine itself:
 
@@ -182,9 +184,12 @@ netignite-agent wol AA:BB:CC:DD:EE:FF --port 9
 - makes the config readable for the service: `/etc/netignite` owned by `root:netignite` with mode
   `0750`, `agent.json` owned by `netignite` with mode `0600`,
 - writes `/etc/systemd/system/netignite-agent.service`,
-- writes the polkit rule `/etc/polkit-1/rules.d/50-netignite-agent.rules` (plus a `.pkla` file in
-  `/etc/polkit-1/localauthority/50-local.d/` on polkit older than 0.106, for example Debian 11),
-- runs `systemctl daemon-reload`, `enable` and `restart`.
+- writes the [shutdown and reboot units](#shutdown-and-reboot) `netignite-agent-shutdown.path`,
+  `netignite-agent-shutdown.service`, `netignite-agent-reboot.path` and
+  `netignite-agent-reboot.service`,
+- removes the polkit rule that versions before 1.0.0 wrote, if there is one,
+- runs `systemctl daemon-reload`, enables and starts the two `.path` units, and enables and
+  (re)starts the service.
 
 `sudo netignite-agent install --dry-run` prints every step and the files' contents without changing
 anything. The unit for host mode (comments left out):
@@ -205,6 +210,9 @@ Restart=always
 RestartSec=5
 RestartPreventExitStatus=78
 TimeoutStopSec=10
+
+RuntimeDirectory=netignite-agent
+RuntimeDirectoryMode=0700
 
 NoNewPrivileges=yes
 ProtectSystem=strict
@@ -235,29 +243,49 @@ In Wake-on-LAN mode, the last line is replaced by `CapabilityBoundingSet=CAP_NET
 `AmbientCapabilities=CAP_NET_RAW`, which `ping` needs. Use `systemctl edit netignite-agent` for local
 changes; `install` and `wol-mode` overwrite the unit file.
 
-### polkit
+### Shutdown and reboot
 
-The rule lets the user `netignite`, and nobody else, use exactly the logind actions behind
-`systemctl poweroff` and `systemctl reboot`:
+The service user `netignite` has no right to shut the machine down, and needs none: no polkit, no
+sudo. It can only ask.
 
-```js [polkit rule]
-polkit.addRule(function (action, subject) {
-	var allowed = [
-		"org.freedesktop.login1.power-off",
-		"org.freedesktop.login1.power-off-multiple-sessions",
-		"org.freedesktop.login1.reboot",
-		"org.freedesktop.login1.reboot-multiple-sessions"
-	];
-	if (subject.user == "netignite" && allowed.indexOf(action.id) >= 0) {
-		return polkit.Result.YES;
-	}
-});
+1. The service has its own runtime directory `/run/netignite-agent` (`RuntimeDirectory=`), owned by
+   `netignite` with mode `0700`, so only the agent and root can write to it.
+2. For a shutdown, the agent creates the file `/run/netignite-agent/shutdown` (`reboot` for a
+   reboot).
+3. `netignite-agent-shutdown.path` sees the file and starts `netignite-agent-shutdown.service`, a
+   root unit that removes the file and powers the machine off. That's all it can do.
+4. The agent waits up to 5 seconds for the file to disappear. If nothing picks it up, it deletes the
+   file again, so it can't fire later, and the dashboard shows the error.
+
+```ini [netignite-agent-shutdown.path]
+[Unit]
+Description=NetIgnite Agent: shutdown requests
+
+[Path]
+PathExists=/run/netignite-agent/shutdown
+Unit=netignite-agent-shutdown.service
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-The `*-multiple-sessions` actions apply when other users are logged in, for example over SSH. The
-`*-ignore-inhibit` actions aren't granted, so a block inhibitor (a running package upgrade, for
-example) still stops a remote shutdown. `systemctl` asks logind over D-Bus, and logind asks polkit;
-no setuid helper is involved, so `NoNewPrivileges` doesn't get in the way.
+```ini [netignite-agent-shutdown.service]
+[Unit]
+Description=NetIgnite Agent: shut down this machine
+
+[Service]
+Type=oneshot
+ExecStart=rm -f /run/netignite-agent/shutdown
+ExecStart=systemctl --no-block poweroff
+```
+
+The reboot units are the same with `reboot`. Before it answers the server, the agent checks that
+the `.path` unit is active and asks systemd-logind for block inhibitors: while something such as a
+package upgrade blocks shutdowns, the dashboard says so and nothing happens. When the agent stops,
+systemd deletes its runtime directory, and a pending request with it.
+
+Versions before 1.0.0 used a polkit rule instead, which failed with *Access denied* on machines
+without polkit. Run `sudo netignite-agent install` again after updating; it removes the rule.
 
 ## Commands
 
@@ -305,15 +333,15 @@ sudo netignite-agent uninstall           # keeps /etc/netignite/agent.json (root
 sudo netignite-agent uninstall --purge   # also deletes the config with the credential
 ```
 
-This stops and disables the service and removes the unit, the polkit rule, the user `netignite`
-and `/usr/local/bin/netignite-agent`. `--dry-run` shows the steps. Delete the agent in the dashboard
+This stops and disables the service and the shutdown and reboot units, removes their unit files,
+the user `netignite` and `/usr/local/bin/netignite-agent`. `--dry-run` shows the steps. Delete the agent in the dashboard
 too.
 
 ## Security
 
 - **Fixed actions only.** The server can ask for `PING`, `HOST_CONTROL` (`shutdown` or `reboot`)
-  and, in Wake-on-LAN mode, `WAKE`, `STATUS`, `SSH_CHECK` and `SSH_EXEC` (one of four fixed commands
-  on another device). Every parameter is validated; commands run without a shell, and only IP
+  and, in Wake-on-LAN mode, `WAKE`, `STATUS`, `SSH_CHECK` and `SSH_POWER` (one of four fixed
+  commands on another device, with the agent's own keys). Every parameter is validated; commands run without a shell, and only IP
   addresses reach `ping`. There's no remote shell, no file access and no configuration change from
   the server.
 - **The secret** is generated on the machine and only leaves it in the `Authorization` header. The
@@ -321,8 +349,8 @@ too.
   not even by `status`. Use an `https://` server address outside your LAN.
 - **The service** runs as the unprivileged user `netignite` with the hardening options above, without
   capabilities in host mode and with only `CAP_NET_RAW` in Wake-on-LAN mode.
-- **SSH logins** for other devices arrive with each request and are only kept in memory for that
-  login; the agent never writes or logs them. See [SSH](/docs/guides/ssh#security).
+- **SSH keys** for other devices are the agent's own, in its config next to the secret; the server
+  never sends a password or key. See [SSH](/docs/guides/ssh#security).
 - The binary doesn't load `.env` or `bunfig.toml` from the working directory, so a stray file there
   can't change how `pair` or `install` behave when run as root.
 
@@ -335,9 +363,10 @@ git clone https://github.com/NetIgnite-project/Agent-Linux.git
 cd Agent-Linux
 bun install
 bun test
-bun run compile all --no-version-tag   # build/bin/netignite-agent-linux-{x64,x64-baseline,arm64}
+bun run compile all --no-version-tag   # build/bin/netignite-agent-{linux,windows,macos}-…
 ```
 
 Releases are built by the repository's release workflow when a tag `v<version>` is pushed; it
-attaches the three binaries and `SHA256SUMS`. Versions with a suffix, such as `1.0.0-beta.1`, are
+attaches the six binaries (Linux, [Windows](/docs/agents/windows), [macOS](/docs/agents/macos)) and
+`SHA256SUMS`. Versions with a suffix, such as `1.0.0-beta.1`, are
 published as pre-releases.

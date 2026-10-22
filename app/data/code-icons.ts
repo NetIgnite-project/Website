@@ -73,6 +73,7 @@ export const codeIcons: Record<string, string> = {
 		"ini",
 		"conf",
 		"service",
+		"path",
 		"caddyfile",
 		"dockerfile",
 	]),

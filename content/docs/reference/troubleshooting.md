@@ -9,7 +9,9 @@ navigation:
 
 Start with the logs: the server's (`docker logs netignite-server`), the ESP32's
 [serial console](/docs/agents/esp32#serial-console) or **Console** tab, and the Linux agent's
-journal (`journalctl -u netignite-agent`).
+journal (`journalctl -u netignite-agent`). The Windows agent logs to
+`C:\ProgramData\NetIgnite\logs\agent.log`, the macOS agent to
+`/usr/local/var/log/netignite-agent/agent.log`.
 
 ## Server
 
@@ -97,13 +99,14 @@ docker exec netignite-server bun -e '
 | `Couldn't connect to "…"` after `wifi` or **Change Wi-Fi** | The new network didn't work; the previous one is kept. |
 | `Not connected to a server yet` | No server set. Use the web installer, or `setup <server-url> <token>`. |
 | `Waiting for the time` | The board can't reach NTP (UDP port 123) or DNS. HTTPS connections wait until the time is synced. |
-| `Enrollment rejected: …` | The setup token was used, expired or is for a Linux agent. Create a new one and install again, or use `enroll <token>`. |
+| `Enrollment rejected: …` | The setup token was used, expired or is for another kind of agent. Create a new one and install again, or use `enroll <token>`. |
 | `Enrollment failed: …` | The server isn't reachable at the configured address. The agent retries every 30 seconds. |
 | `This agent has no credential` | The credential was erased. Set the agent up again. |
 | `Couldn't connect to the server, retrying in … s` | Wrong server address, the certificate isn't trusted (private CA, see [Certificates](/docs/agents/esp32#certificates)), the proxy doesn't forward `/ws/agent`, or the credential was revoked: then set the agent up again. |
 
-**Linux agent**: run `sudo netignite-agent status`. It checks the server (`Server check`) and the
-credential (`Credential`) unless the service is running.
+**Linux, Windows and macOS agent**: run `sudo netignite-agent status` (Windows: in an elevated
+PowerShell, `& "C:\Program Files\NetIgnite\netignite-agent.exe" status`). It checks the server
+(`Server check`) and the credential (`Credential`) unless the service is running.
 
 | Message | Cause and fix |
 | --- | --- |
@@ -111,7 +114,7 @@ credential (`Credential`) unless the service is running.
 | `The server revoked this agent's credential` | Same: it was paired again elsewhere, revoked or reset in the dashboard. |
 | `Another connection with this agent's credential replaced this one` | The agent runs twice, for example `run` by hand next to the service. |
 | `The server didn't accept the HELLO` | The agent and the server don't speak the same protocol version. Update the agent or the server. |
-| `No config at /etc/netignite/agent.json` | Pair the agent first. |
+| `No config at …` | Pair the agent first. |
 
 The server logs `Agent <id> online (…)` when an agent connects and `Agent <id> disconnected` when
 it goes.
@@ -193,32 +196,38 @@ Hover the status badge for the reason:
 | *No status address configured* | Enter the address for the IPv4, IPv6 or SSH check. |
 | *Agent is offline* | Check the agent. |
 | *Agent doesn't support …* | The agent lacks the capability, for example a Linux agent without Wake-on-LAN mode. |
-| *No host agent assigned* | Choose the Linux agent on the device, or another status check. |
+| *No host agent assigned* | Choose the agent on the device, or another status check. |
 | *Agent didn't answer in time* | The check took longer than 6 seconds. |
 
 ## Shutdown and reboot
 
 ### Shut down and Reboot are missing
 
-The device needs the [Linux agent on the device](/docs/agents/linux#host-mode) (online), or an
-[SSH login](/docs/guides/ssh) with a trusted host key and an online agent that can log in over SSH.
-Viewers don't get power actions.
+The device needs the agent on the device (online): a [Linux](/docs/agents/linux#host-mode),
+[Windows](/docs/agents/windows) or [macOS](/docs/agents/macos) agent. Or SSH turned on under
+**Admin → Server Settings**, an [SSH login](/docs/guides/ssh) with a trusted host key, and an online
+agent that can log in over SSH. Viewers don't get power actions.
 
 ### Shutdown requested, but nothing happens
 
-- **Linux agent on the device:** the dashboard shows why the agent refused (from systemd-logind).
-  Usually polkit is missing (`apt install polkitd`, then `sudo netignite-agent install` again) or a
-  block inhibitor, such as a running package upgrade, holds the shutdown (`systemd-inhibit --list`).
-  If the request succeeded but nothing happened, check the journal for `Host control (shutdown) failed`.
+- **Agent on the device:** the dashboard shows why the agent refused. *… can't shut down
+  through the agent (netignite-agent-shutdown.path is inactive)*, or on macOS *(… is missing)*: run
+  `sudo netignite-agent install` again, for example after updating from a version before 1.0.0.
+  *… blocks shutdown and reboot right now*: a block inhibitor, such as a running package upgrade,
+  holds the shutdown (`systemd-inhibit --list`). If the request succeeded but nothing happened,
+  check `journalctl -u netignite-agent -u netignite-agent-shutdown` (Linux) or the agent's log
+  (Windows, macOS).
 - **SSH:** errors come back in the toast:
 
 | Message | Fix |
 | --- | --- |
+| *SSH is turned off on this server* | An admin turns it on under **Admin → Server Settings**. While it's off, NetIgnite sends no SSH request at all. |
 | *Test the SSH login and trust the device's host key first* | Open the **SSH** tab, **Test login** and **Trust this host key**. |
 | `sudo: a password is required` | The sudoers line is missing. See [SSH](/docs/guides/ssh#linux-macos-bsd). |
 | `host_key_mismatch` | The device's host key changed. Test again and trust the new key if you expected the change. |
-| `auth_failed` | Wrong username, password or `authorized_keys` line. |
-| *The device's agent can't log in over SSH* | The device's agent doesn't support SSH, for example a Linux agent without Wake-on-LAN mode. |
+| *the device didn't accept the agent's shutdown key* (or *reboot key*) | Wrong username, or the `authorized_keys` lines are missing or outdated: copy them again from the **SSH** tab. |
+| *Too many SSH logins (at most 10 a minute)* | The agent limits its SSH logins. Wait the time it says. |
+| *The device's agent can't log in over SSH* | The device's agent doesn't support SSH: a Linux agent without Wake-on-LAN mode, an agent that connects over plain HTTP (SSH needs HTTPS), or an agent from before 2.0.0. |
 
 ## Firmware updates
 

@@ -43,7 +43,7 @@ Open **Devices → Add device** and fill in:
 | **Status check** | How NetIgnite finds out whether the device is online. See [below](#status-checks). |
 | **Address** | For the IPv4, IPv6 and SSH checks: the address the agent checks. |
 | **TCP port** | Optional for the MAC, IPv4 and IPv6 checks; the port for the SSH check (default `22`). |
-| **Linux agent on the device** | The [Linux agent](/docs/agents/linux#host-mode) running on this device, if any. It enables **Shut down** and **Reboot** and the status check *Linux agent on the device*. |
+| **Agent on the device** | The NetIgnite agent running on this device, if any: a [Linux](/docs/agents/linux#host-mode), [Windows](/docs/agents/windows) or [macOS](/docs/agents/macos) agent. It enables **Shut down** and **Reboot** and the status check *Agent on the device*. |
 
 Only the owner chooses the agents; the lists show only your own agents.
 
@@ -56,7 +56,7 @@ Only the owner chooses the agents; the lists show only your own agents.
 | **IPv4 address** | Pings the address. | Most devices. Give them a fixed address (DHCP reservation). |
 | **IPv6 address** | Pings the address. A zone such as `fe80::1%eth0` is allowed. | Devices with a stable IPv6 address. |
 | **SSH port** | Tries a TCP connection to port 22, or the **TCP port** you enter. Works with an IP address or a host name. | Linux, macOS and NAS devices with an SSH server. It doesn't log in. |
-| **Linux agent on the device** | Nothing: the device is online while its Linux agent is connected. | Machines that run the [Linux agent](/docs/agents/linux). |
+| **Agent on the device** | Nothing: the device is online while the agent running on it is connected. | Linux, Windows and macOS machines that run the NetIgnite agent. |
 
 With **TCP port** set, the MAC, IPv4 and IPv6 checks also count the device as online when that port
 answers. That helps with devices that don't answer pings, such as Windows PCs with the default
@@ -92,12 +92,12 @@ turned on; watch its status turn **Online**, or see
 When a device can be shut down, the power button gets a menu with **Shut down** and **Reboot**.
 NetIgnite asks for confirmation, then shows *Shutdown requested* or *Reboot requested*. This needs:
 
-- the **Linux agent on the device**, online (the preferred way for Linux machines: no login to the
-  device is stored anywhere), or
-- an **SSH login** with a trusted host key, and the device's agent online and able to log in over
-  SSH. Use a dedicated user that may only shut down and reboot. See [SSH](/docs/guides/ssh).
+- the **Agent on the device**, online: the NetIgnite agent on a Linux, Windows or macOS machine
+  (the preferred way: no login to the device exists at all), or
+- an **SSH login** with a trusted host key, SSH turned on by an admin, and the device's agent
+  online and able to log in over SSH. See [SSH](/docs/guides/ssh).
 
-If both are set up, NetIgnite uses the Linux agent while it's online, and SSH otherwise.
+If both are set up, NetIgnite uses the agent on the device while it's online, and SSH otherwise.
 
 ## Favorites
 

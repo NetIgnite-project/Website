@@ -74,7 +74,8 @@ See [Users & Accounts](/docs/server/users).
 Admins see two more pages:
 
 - **Users**: create, edit and delete accounts and reset passwords.
-- **Server Settings**: public sign-up, the default ESP32 firmware channel and the firmware sync.
+- **Server Settings**: public sign-up, the default ESP32 firmware channel, the firmware sync and
+  whether devices can be shut down and rebooted over [SSH](/docs/guides/ssh) (off by default).
 
 See [Users & Accounts](/docs/server/users#managing-users) and
 [Configuration](/docs/server/configuration#server-settings-in-the-dashboard).

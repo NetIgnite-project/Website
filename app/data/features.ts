@@ -31,14 +31,14 @@ export const homeFeatures: Feature[] = [
 		icon: "i-lucide-power",
 		title: "Shutdown & Reboot",
 		description:
-			"Shut down and reboot Linux machines through the NetIgnite Linux agent, or other devices over SSH with a login limited to exactly these two commands.",
+			"Shut down and reboot Linux, Windows and macOS machines through the NetIgnite agent on them, or other devices over SSH with keys limited to exactly these two commands.",
 		tone: "cyan",
 	},
 	{
 		icon: "i-lucide-activity",
 		title: "Live Status",
 		description:
-			"See which devices are online, checked every 20 seconds by IP address, TCP port, MAC address, SSH port or the Linux agent on the device.",
+			"See which devices are online, checked every 20 seconds by IP address, TCP port, MAC address, SSH port or the agent on the device.",
 		tone: "green",
 	},
 	{
@@ -77,14 +77,14 @@ export const platformFeatures: Feature[] = [
 		icon: "i-lucide-power",
 		title: "Shutdown & Reboot",
 		description:
-			"Turn Linux machines off or restart them through the NetIgnite Linux agent, which can do nothing else. Other devices work over SSH with a login restricted to shutdown and reboot.",
+			"Turn Linux, Windows and macOS machines off or restart them through the NetIgnite agent on them, which can do nothing else. Other devices work over SSH, with keys that only allow shutdown and reboot.",
 		tone: "cyan",
 	},
 	{
 		icon: "i-lucide-activity",
 		title: "Live Status",
 		description:
-			"Status checks every 20 seconds by IPv4 or IPv6 address, TCP port, MAC address (IPv6 link-local), SSH port or the Linux agent on the device.",
+			"Status checks every 20 seconds by IPv4 or IPv6 address, TCP port, MAC address (IPv6 link-local), SSH port or the agent on the device.",
 		tone: "green",
 	},
 	{
@@ -136,7 +136,7 @@ export const setupSteps: SetupStep[] = [
 	{
 		title: "Set Up an Agent",
 		description:
-			"Install the ESP32 agent from your browser, or the Linux agent with one command, in the network of your devices.",
+			"Install the ESP32 agent from your browser, or the Linux agent with one command, in the network of your devices. On PCs and Macs, the agent also shuts them down.",
 	},
 	{
 		title: "Add Your Devices",

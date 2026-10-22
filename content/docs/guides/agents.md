@@ -17,6 +17,8 @@ to the server, wakes and checks devices, and shuts them down. You need one agent
 | --- | --- |
 | **ESP32** | A small board in your network, installed from the browser. Wakes devices, checks their status and logs in to them over SSH. See [ESP32 Agent](/docs/agents/esp32). |
 | **Linux agent** | A service for an always-on Linux machine, for example a Raspberry Pi or a server. Reports its own status and shuts the machine down or reboots it; in Wake-on-LAN mode it also wakes, checks and logs in to other devices. See [Linux Agent](/docs/agents/linux). |
+| **Windows agent** | A service on a Windows 10 or 11 PC. Reports its status and shuts it down or restarts it. See [Windows Agent](/docs/agents/windows). |
+| **macOS agent** | A service on a Mac. Reports its status and shuts it down or restarts it. See [macOS Agent](/docs/agents/macos). |
 
 The kind can't be changed later. For an agent you [wrote yourself](/docs/agents/protocol), choose
 **Linux agent**.
@@ -56,17 +58,26 @@ setup https://netignite.example.com netignite_enroll_…
 
 See [Serial console](/docs/agents/esp32#serial-console).
 
-### Linux agent: setup command
+### Linux, Windows and macOS agents: setup command
 
-Click **Create setup command** and run the command on the Linux machine:
+Click **Create setup command** and run the command on the machine:
 
-```bash [Terminal]
+```bash [Linux]
 curl -fsSL https://netignite.example.com/install/linux.sh | sudo sh -s -- netignite_enroll_…
 ```
 
-It downloads the agent, checks it, pairs it with the server and installs the systemd service. If
-the agent is already installed, open *Agent already installed?* for a
-`sudo netignite-agent pair …` command instead. See [Linux Agent](/docs/agents/linux).
+```bash [macOS (Terminal)]
+curl -fsSL https://netignite.example.com/install/macos.sh | sudo sh -s -- netignite_enroll_…
+```
+
+```powershell [Windows (PowerShell as administrator)]
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((irm 'https://netignite.example.com/install/windows.ps1'))) 'netignite_enroll_…'
+```
+
+It downloads the agent, checks it, pairs it with the server and installs the service. If the agent
+is already installed, open *Agent already installed?* for a `netignite-agent pair …` command
+instead. See [Linux Agent](/docs/agents/linux), [Windows Agent](/docs/agents/windows) and
+[macOS Agent](/docs/agents/macos).
 
 ## Agent status
 
@@ -77,12 +88,12 @@ the agent is already installed, open *Agent already installed?* for a
 | **Not set up** | The agent has no credential yet, or it was revoked. |
 
 The **General** tab also shows the agent's version, its **capabilities** (what it can do, for
-example `wake`, `status.ip`, `ssh` or `host.control`) and the diagnostics it reports: IP
+example `wake`, `status.ip`, `ssh.power` or `host.control`) and the diagnostics it reports: IP
 addresses, Wi-Fi signal, uptime, memory and more. Agents that lose their connection reconnect on
 their own, after 5 seconds at first and at most every 60 seconds.
 
-The **Devices** card lists the devices that use the agent, to wake them or as the Linux agent on
-the device.
+The **Devices** card lists the devices that use the agent, to wake them or as the agent on the
+device.
 
 ## Console
 
