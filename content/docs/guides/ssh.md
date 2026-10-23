@@ -77,7 +77,8 @@ shell. On macOS, create a **Standard** user (not an administrator) in **System S
 Groups** and allow it under **Remote Login**; on BSD, use `adduser`. On Windows, shutting down needs
 an administrator account (see [Windows](#windows)).
 
-For Linux, macOS and BSD, the dashboard warns when the username is `root`, `admin` or `Administrator`.
+For Linux, macOS and BSD, the dashboard warns when the username is `root`, `admin`, `Administrator` or `ALL` (which the
+sudoers line would treat as *every user*).
 
 ## Setting up the login
 
