@@ -111,7 +111,7 @@ or any serial terminal. Type `help` for the list.
 | Command | What it does |
 | --- | --- |
 | `help` | Lists the commands. |
-| `status` | Firmware, device, Wi-Fi, IP addresses, server, agent ID and connection state. Never shows the secret. |
+| `status` | Firmware, device, Wi-Fi, IP addresses, server, agent ID, connection state and the fingerprints of the agent's SSH keys. Never shows the secret. |
 | `setup <server-url> <token>` | Connects the agent to a NetIgnite server with a setup token from the dashboard. |
 | `wifi <ssid> [password]` | Connects to a Wi-Fi network. It's saved only if the connection works. Quote names with spaces: `wifi "My Network" "my password"`. |
 | `server <url>` | Changes the server address. |
