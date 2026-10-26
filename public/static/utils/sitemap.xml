@@ -95,6 +95,16 @@
   <priority>0.8</priority>
 </url>
 <url>
+  <loc>https://netignite.dev/docs/agents/windows</loc>
+  <lastmod>2026-10-22T00:00:00+00:00</lastmod>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://netignite.dev/docs/agents/macos</loc>
+  <lastmod>2026-10-22T00:00:00+00:00</lastmod>
+  <priority>0.8</priority>
+</url>
+<url>
   <loc>https://netignite.dev/docs/agents/protocol</loc>
   <lastmod>2026-10-21T00:00:00+00:00</lastmod>
   <priority>0.7</priority>

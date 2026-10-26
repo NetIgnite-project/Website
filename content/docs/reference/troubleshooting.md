@@ -211,8 +211,9 @@ agent that can log in over SSH. Viewers don't get power actions.
 ### Shutdown requested, but nothing happens
 
 - **Agent on the device:** the dashboard shows why the agent refused. *… can't shut down
-  through the agent (netignite-agent-shutdown.path is inactive)*, or on macOS *(… is missing)*: run
-  `sudo netignite-agent install` again, for example after updating from 1.0.0 or older.
+  through the agent (netignite-agent-shutdown.path is inactive)*, or on macOS *(… is missing)* or
+  *(… isn't loaded)*: run `sudo netignite-agent install` again, for example after updating from
+  1.0.0 or older.
   *… blocks shutdown and reboot right now*: a block inhibitor, such as a running package upgrade,
   holds the shutdown (`systemd-inhibit --list`). If the request succeeded but nothing happened,
   check `journalctl -u netignite-agent -u netignite-agent-shutdown` (Linux) or the agent's log
