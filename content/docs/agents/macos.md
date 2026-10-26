@@ -112,9 +112,9 @@ it on request:
 3. The agent waits up to 5 seconds for the request to be picked up. If nothing does, it removes the
    request again and the dashboard shows the error.
 
-Before answering the server, the agent checks that the request folder exists; if not, the dashboard
-says to run `sudo netignite-agent install` again. Open apps are quit without asking; changes that
-an app doesn't save by itself are lost.
+Before answering the server, the agent checks that the request folder exists and that launchd has
+the root daemon loaded; if not, the dashboard says to run `sudo netignite-agent install` again.
+Open apps are quit without asking; changes that an app doesn't save by itself are lost.
 
 ## Commands
 
